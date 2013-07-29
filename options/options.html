@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<title>RWeb Options</title>
+	<link rel="stylesheet" href="options.css" />
+</head>
+
+<body class="loading">
+
+<form id="sites">
+	<table>
+		<thead>
+			<tr>
+				<th>Enabled</th>
+				<th>Settings</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody class="new-site">
+			<tr>
+				<td class="enabled"><input type="checkbox" name="enabled" class="enabled el-enabled" checked /></td>
+				<td class="content"><input name="host" class="host el-host" placeholder="Hosts / domains. Use coma to separate more. Use '::' to target this page." /></td>
+				<td class="no-padding"><a class="expands-site" href="#">open</a></td>
+			</tr>
+			<tr>
+				<th>Options</th>
+				<td class="options" colspan="2">
+					<label><input type="checkbox" name="sync" /> Sync up?</label>
+					<!-- label>JS <select name="js_exec"><option value="domready">ondomready<option value="load">onload</select></label -->
+				</td>
+			</tr>
+			<tr>
+				<th>CSS</th>
+				<td class="content" colspan="2">
+					<textarea name="css" rows="3" class="code expands css el-css"></textarea>
+				</td>
+			</tr>
+			<tr>
+				<th>JS</th>
+				<td class="content" colspan="2">
+					<textarea name="js" rows="3" class="code expands js el-js" placeholder="All script will be executed on DOMContentLoaded."></textarea>
+				</td>
+			</tr>
+		</tbody>
+		<tfoot>
+			<tr>
+				<td colspan="3">
+					<input type="submit" value="Save" disabled />
+					<input type="reset" value="Reset" disabled />
+					&nbsp;
+					<input type="button" value="Export" id="btn-export" disabled />
+					<!-- input type="button" value="Import" id="btn-import" / -->
+					&nbsp;
+					<input type="button" value="Stats" id="btn-stats" disabled />
+				</td>
+			</tr>
+		</tfoot>
+	</table>
+</form>
+
+<p><textarea style="display: none" rows="4" id="ta-export"></textarea></p>
+
+<!-- form id="prefs">
+	<p>
+		Object store: <input name="object_store" value="http://localhost/tests/object-store.php" />
+		Sync secret: <input name="sync_secret" />
+		<input type="submit" value="Save" />
+	</p>
+</form -->
+
+<script type="text/javascript" src="rjs.js"></script>
+<script type="text/javascript" src="../helpers.js"></script>
+<script type="text/javascript" src="updates.js"></script>
+<script type="text/javascript" src="options.js"></script>
+
+</body>
+
+</html>

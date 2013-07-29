@@ -1,0 +1,101 @@
+
+pre {
+	padding: 20px;
+	background: #ddd;
+	border: solid 1px #000;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	background: #ddd;
+	overflow-y: scroll;
+}
+input:not([type=submit]):not([type=button]):not([type=reset]), textarea, select {
+	padding: 5px;
+	background: #fff;
+	border: solid 1px #bbb;
+}
+input[type=submit],
+input[type=button],
+input[type=reset] {
+	padding: 5px 15px;
+}
+
+body.loading::before {
+	content: "LOADING";
+	display: block;
+	background: black;
+	color: white;
+	padding: 30px;
+	font-size: 50px;
+	text-align: center;
+	font-weight: bold;
+	letter-spacing: 10px;
+	margin-bottom: 10px;
+}
+
+#sites table {
+	width: 100%;
+	border-spacing: 0;
+	border: solid 1px #aaa;
+	background: #ccc;
+}
+#sites tbody:not(.expanded) > tr:not(:first-child) {
+	display: none;
+}
+#sites tbody.expanded {
+	background: #aaa;
+}
+#sites th,
+#sites td {
+	padding: 5px;
+	border: solid 1px #bbb;
+}
+#sites.saved table,
+#sites.saved th,
+#sites.saved td {
+	border-color: green;
+}
+#sites.dirty table,
+#sites.dirty th,
+#sites.dirty td {
+	border-color: red;
+}
+#sites tbody.new-site:not(.enabled),
+#sites tbody.disabled {
+	opacity: 0.6;
+}
+#sites td.enabled {
+	text-align: center;
+}
+#sites td.content {
+	width: 100%;
+}
+#sites .host {
+	width: 100%;
+	display: block;
+}
+#sites .no-padding {
+	padding: 0;
+}
+#sites .expands-site {
+	display: block;
+	padding: 0 15px;
+	text-align: center;
+	background: rgba(255, 255, 255, 0.5);
+	line-height: -webkit-calc(1.2em + 22px);
+}
+#sites .options > label {
+	margin-right: 20px;
+}
+#sites textarea.code {
+	width: 100%;
+	display: block;
+}
+
+#ta-export {
+	width: 100%;
+}
