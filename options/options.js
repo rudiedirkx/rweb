@@ -238,10 +238,14 @@ rweb.ui = {
 		$btnStats.on('click', function(e) {
 			function thousands(num, nokilo) {
 				if ( !nokilo && num > 5000 ) {
-					return thousands(parseInt(num/1000), true) + ' k';
+					return thousands(num/1000, true) + ' k';
 				}
 
-				return String(num).split('').reverse().join('').match(/.{1,3}/g).join(',').split('').reverse().join('');
+				if ( num < 100 ) {
+					return String(Math.round(num*10) / 10);
+				}
+
+				return String(Math.round(num)).split('').reverse().join('').match(/.{1,3}/g).join(',').split('').reverse().join('');
 			}
 
 			var report = '';
