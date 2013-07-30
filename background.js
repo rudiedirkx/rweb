@@ -11,7 +11,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if ( msg.sites.length ) {
 		chrome.browserAction.getBadgeText({tabId: sender.tab.id}, function(text) {
-			var num = Math.max(parseFloat(text) || 0, msg.sites.length);
+			var num = (parseFloat(text) || 0) + msg.sites.length;
 			chrome.browserAction.setBadgeText({
 				text: String(num),
 				tabId: sender.tab.id
@@ -22,5 +22,4 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 			tabId: sender.tab.id
 		});
 	}
-	// No need to let content.js know if we triggered the badge
 });

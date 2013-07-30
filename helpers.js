@@ -16,6 +16,18 @@ rweb = {
 		// });
 	// },
 
+	matched: function(host, sites, callback) {
+		if ( sites && sites.length ) {
+			chrome.storage.local.get('history', function(items) {
+				var history = items.history || {};
+				history[host] = (history[host] || 0) + sites.length;
+				chrome.storage.local.set({history: history}, function() {
+					callback && callback();
+				});
+			});
+		}
+	},
+
 	saveSites: function(sites, callback) {
 		var offline = [], online = [];
 		sites.forEach(function(site) {

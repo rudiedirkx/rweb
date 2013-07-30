@@ -268,6 +268,14 @@ rweb.ui = {
 			chrome.storage.local.getBytesInUse(null, function(bytes) {
 				console.log('[RWeb report]', thousands(bytes), '/', thousands(chrome.storage.local.QUOTA_BYTES), 'bytes offline storage in use');
 			});
+			chrome.storage.local.get('history', function(items) {
+				if ( items.history ) {
+					console.log('[RWeb report] Matching history:');
+					$each(items.history, function(num, host) {
+						console.log('[RWeb report]   ', thousands(num), 'x - ' + host);
+					});
+				}
+			});
 		});
 	}
 };
