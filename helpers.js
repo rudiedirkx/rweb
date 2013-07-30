@@ -2,6 +2,7 @@
 rweb = {
 	// STORAGE: 'local',
 	// cache: 0,
+	USABLE_ONLINE_STORAGE: .8,
 
 	host: function(host) {
 		return host.replace(/^www\./, '');
@@ -52,7 +53,7 @@ rweb = {
 		// Save online
 		chrome.storage.sync.get('chunks', function(items) {
 			var data = JSON.stringify(online),
-				chunkSize = chrome.storage.sync.QUOTA_BYTES_PER_ITEM * 0.8,
+				chunkSize = chrome.storage.sync.QUOTA_BYTES_PER_ITEM * rweb.USABLE_ONLINE_STORAGE,
 				chunks = {chunks: 0};
 
 			while ( data ) {

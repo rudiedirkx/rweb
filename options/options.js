@@ -2,9 +2,16 @@
 /**
  * To do:
  * [x] 'sites' in storage.sync should be 'chunks'
+ * [ ] Better dirty check: check hash or JSON, not just onchange (or better!)
+ * [ ] Unmark newly created site 'disabled' and 'new' so it's opaque after saving
  * [ ] Show online/offline/sync status in the sites table
+ * [ ] Local option 'onBrowserActionClick':
+ *      o open options
+ *      o open options with site prefilled
+ *      o open options with site hilited
+ *      o start select0r
  * [x] Create a status report with useless statistics
- * [ ] More useful stats in the status report, like hits & misses
+ * [x] More useful stats in the status report, like hits & misses
  * [ ] Create indiscriminate import (only add, remove nothing)
  * [ ] Key sites by GUID so importing and syncing make sense
  * [ ] ? Implement Select0r
@@ -161,6 +168,7 @@ rweb.ui = {
 			// Close site
 			.on('keyup', '.el-host', function(e) {
 				if ( e.key == Event.Keys.esc ) {
+					this.value = this.defaultValue;
 					this.firstAncestor('tbody').removeClass('expanded');
 				}
 			})
@@ -248,8 +256,6 @@ rweb.ui = {
 				return String(Math.round(num)).split('').reverse().join('').match(/.{1,3}/g).join(',').split('').reverse().join('');
 			}
 
-			var report = '';
-
 			rweb.sites(null, function(sites) {
 				var online = 0, offline = 0;
 				sites.forEach(function(site) {
@@ -263,10 +269,12 @@ rweb.ui = {
 				console.log('[RWeb report]', thousands(items.chunks), 'online chunks (max chunk size =', thousands(chrome.storage.sync.QUOTA_BYTES_PER_ITEM), ')');
 			});
 			chrome.storage.sync.getBytesInUse(null, function(bytes) {
-				console.log('[RWeb report]', thousands(bytes), '/', thousands(chrome.storage.sync.QUOTA_BYTES), 'bytes online storage in use');
+				var pct = Math.ceil(100 * bytes / (chrome.storage.sync.QUOTA_BYTES * rweb.USABLE_ONLINE_STORAGE));
+				console.log('[RWeb report]', thousands(bytes), '/', thousands(chrome.storage.sync.QUOTA_BYTES * rweb.USABLE_ONLINE_STORAGE), 'bytes (', pct, '%) online storage in use');
 			});
 			chrome.storage.local.getBytesInUse(null, function(bytes) {
-				console.log('[RWeb report]', thousands(bytes), '/', thousands(chrome.storage.local.QUOTA_BYTES), 'bytes offline storage in use');
+				var pct = Math.ceil(100 * bytes / (chrome.storage.local.QUOTA_BYTES));
+				console.log('[RWeb report]', thousands(bytes), '/', thousands(chrome.storage.local.QUOTA_BYTES), 'bytes (', pct, '%) offline storage in use');
 			});
 			chrome.storage.local.get('history', function(items) {
 				if ( items.history ) {
