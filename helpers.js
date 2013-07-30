@@ -167,22 +167,24 @@ console.log('[RWeb helpers] Fetched sites for "' + host + '"', sites);
 	},
 
 	css: function(site) {
-		if ( site.css && document.head ) {
+		var attachTo = document.head || document.body || document.documentElement;
+		if ( site.css && attachTo ) {
 			var el = document.createElement('style');
 			el.dataset.origin = 'rweb';
 			el.textContent = site.css;
 
-			document.head.appendChild(el);
+			attachTo.appendChild(el);
 		}
 	},
 	js: function(site, wrap) {
-		if ( site.js && document.head && location.protocol != 'chrome-extension:' ) {
+		var attachTo = document.head || document.body || document.documentElement;
+		if ( site.js && attachTo && location.protocol != 'chrome-extension:' ) {
 			var el = document.createElement('script');
 			el.dataset.origin = 'rweb';
 			var js = !wrap ? site.js : "document.addEventListener('DOMContentLoaded', function(e) {\n" + site.js + "\n});";
 			el.textContent = js;
 
-			document.head.appendChild(el);
+			attachTo.appendChild(el);
 		}
 	}
 };

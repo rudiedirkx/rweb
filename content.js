@@ -11,6 +11,6 @@ rweb.sites(host, function(sites) {
 	// Add CSS & JS
 	sites.forEach(function(site) {
 		rweb.css(site);
-		rweb.js(site, true);
+		rweb.js(site, !!document.head);
 	});
 });
