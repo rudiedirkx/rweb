@@ -23,6 +23,11 @@ input[type=button],
 input[type=reset] {
 	padding: 5px 15px;
 }
+input[type=submit] {
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	font-weight: bold;
+}
 
 body.loading::before {
 	content: "LOADING";
@@ -77,16 +82,6 @@ body.loading::before {
 #sites .host {
 	width: 100%;
 	display: block;
-}
-#sites .no-padding {
-	padding: 0;
-}
-#sites .expands-site {
-	display: block;
-	padding: 0 15px;
-	text-align: center;
-	background: rgba(255, 255, 255, 0.5);
-	line-height: -webkit-calc(1.2em + 22px);
 }
 #sites .options > label {
 	margin-right: 20px;

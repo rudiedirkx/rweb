@@ -2,8 +2,9 @@
 /**
  * To do:
  * [x] 'sites' in storage.sync should be 'chunks'
- * [ ] Better dirty check: check hash or JSON, not just onchange (or better!)
- * [ ] Unmark newly created site 'disabled' and 'new' so it's opaque after saving
+ * [x] Better dirty check: check hash or JSON, not just onchange (or better!)
+ * [x] Unmark newly created site 'disabled' and 'new' so it's opaque after saving
+ * [ ] Add onbeforeunload to warn about unsaved changes (with better dirty check)
  * [ ] Show online/offline/sync status in the sites table
  * [ ] Local option 'onBrowserActionClick':
  *      o open options
@@ -40,10 +41,12 @@ Element.extend({
 		return options;
 	},
 	fixRows: function(min) {
-		min || (min = 3);
-		this.rows = min;
-		while ( this.clientHeight < this.scrollHeight ) {
-			this.rows++;
+		if ( 'rows' in this ) {
+			min || (min = 3);
+			this.rows = min;
+			while ( this.clientHeight < this.scrollHeight ) {
+				this.rows++;
+			}
 		}
 	},
 	enabledOrDisabledClass: function() {
@@ -59,6 +62,8 @@ Element.extend({
 var $sites, $btnExport, $btnStats, $table, $newSite, $prefs;
 
 rweb.ui = {
+	_state: '',
+
 	init: function() {
 		// Elements
 		$sites = $('sites');
@@ -72,9 +77,10 @@ rweb.ui = {
 		rweb.ui.buildSites(function() {
 			rweb.ui.addListeners();
 
+			// Select existing or new site
 			if ( location.hash.length > 1 ) {
-				var host = rweb.host(location.hash.substr(1));
-				var site = document.querySelector('input[value="' + host + '"]'),
+				var host = location.hash.substr(1),
+					site = document.querySelector('input[value="' + host + '"]'),
 					tbody;
 				if ( site ) {
 					tbody = site.firstAncestor('tbody');
@@ -82,15 +88,18 @@ rweb.ui = {
 				else {
 					tbody = $('tbody.new-site', 1);
 				}
-				tbody.getElement('a.expands-site').click();
+				rweb.ui.openSite(tbody);
+
 				var $host = tbody.getElement('.el-host');
 				$host.value = host;
 				$host.focus();
 			}
 
+			rweb.ui._state = JSON.encode(rweb.ui.settings());
+
 			document.body.removeClass('loading');
 
-			$$('tfoot input').attr('disabled', null);
+			$$('tfoot input:not([data-disabled])').attr('disabled', null);
 		});
 
 		// Prefs
@@ -132,26 +141,31 @@ rweb.ui = {
 			callback();
 		});
 	},
+	openSite: function(tbody) {
+		rweb.ui.closeSites(tbody);
+		tbody.classList.add('expanded');
+	},
+	closeSites: function(not) {
+		$sites.getElements('tbody.expanded').filter(function(tb) {
+			return tb != not;
+		}).removeClass('expanded');
+	},
+	settings: function(feedback) {
+		return $sites.getElements('tbody')
+			.map(function(tb) {
+				return tb.getNamedElementValues(feedback);
+			})
+			.filter(function(setting) {
+				return setting.host && ( setting.js || setting.css );
+			})
+		;
+	},
 	addListeners: function() {
 		$sites
-			// Expand site
-			.on('click', 'a.expands-site', function(e) {
-				e.preventDefault();
-
+			// Open site
+			.on('focus', '.el-host', function(e) {
 				var tbody = this.firstAncestor('tbody');
-
-				$sites.getElements('tbody.expanded').filter(function(tb) {
-					return tb != tbody;
-				}).removeClass('expanded');
-
-				if ( tbody.classList.toggle('expanded') ) {
-					// var tas = tbody.getElements('textarea');
-					// tas.fixRows();
-
-					// var ta = tas[0];
-					// ta.focus();
-					// ta.selectionStart = 0;
-				}
+				rweb.ui.openSite(tbody);
 			})
 
 			// Focus textarea
@@ -169,12 +183,15 @@ rweb.ui = {
 			.on('keyup', '.el-host', function(e) {
 				if ( e.key == Event.Keys.esc ) {
 					this.value = this.defaultValue;
-					this.firstAncestor('tbody').removeClass('expanded');
+
+					var tbody = this.firstAncestor('tbody');
+					rweb.ui.closeSites();
 				}
 			})
 
 			// Save settings
 			.on('keydown', function(e) {
+				// CTRL + S
 				if ( e.key == 83 && e.ctrl ) {
 					e.preventDefault();
 					this.fire('submit', e);
@@ -183,21 +200,16 @@ rweb.ui = {
 			.on('submit', function(e) {
 				e.preventDefault();
 
-				var settings = $sites.getElements('tbody')
-					.map(function(tb) {
-						return tb.getNamedElementValues(true);
-					})
-					.filter(function(setting) {
-						return setting.host && ( setting.js || setting.css );
-					})
-				;
+				var settings = rweb.ui.settings(true);
+
+				// Save back to state for dirty check
+				rweb.ui._state = JSON.encode(settings);
 
 				rweb.saveSites(settings, function() {
+					// clean/dirty => saved
 					$sites.removeClass('dirty').addClass('saved');
 
-					// var tas = $sites.getElements('textarea');
-					// tas.fixRows();
-
+					// After 1 sec: saved => clean
 					setTimeout(function() {
 						$sites.removeClass('saved');
 					}, 1000);
@@ -216,26 +228,34 @@ rweb.ui = {
 
 			// Tag dirty
 			.on('change', function(e) {
-				$sites.addClass('dirty');
+				var state = JSON.encode(rweb.ui.settings()),
+					changed = state != rweb.ui._state,
+					method = changed ? 'addClass' : 'removeClass';
+				$sites[method]('dirty');
 			})
 			.on('keyup', 'input, textarea', function(e) {
-				var changed = this.type == 'checkbox' ? this.defaultChecked != this.checked : this.defaultValue != this.value
-				if ( changed ) {
-					$sites.addClass('dirty');
+				// Undo disabled state
+				if ( this.hasClass('code') && this.value != '' ) {
+					var tbody = this.firstAncestor('tbody');
+					tbody.removeClass('new-site');
 				}
-				this.fixRows && this.fixRows(this.rows);
+
+				// Check dirty
+				if ( !$sites.hasClass('dirty') ) {
+					var state = JSON.encode(rweb.ui.settings());
+					if ( state != rweb.ui._state ) {
+						$sites.addClass('dirty');
+					}
+				}
+
+				// Fix textarea height
+				this.fixRows(this.rows);
 			})
 		;
 
 		$btnExport.on('click', function(e) {
-			var settings = $sites.getElements('tbody')
-				.map(function(tb) {
-					return tb.getNamedElementValues();
-				})
-				.filter(function(setting) {
-					return setting.host && ( setting.js || setting.css );
-				})
-			;
+			var settings = rweb.ui.settings(false);
+
 			var ta = $('ta-export');
 			ta.value = JSON.stringify(settings);
 			ta.show().focus();

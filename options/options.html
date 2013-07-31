@@ -15,14 +15,12 @@
 			<tr>
 				<th>Enabled</th>
 				<th>Settings</th>
-				<th></th>
 			</tr>
 		</thead>
 		<tbody class="new-site">
 			<tr>
 				<td class="enabled"><input type="checkbox" name="enabled" class="enabled el-enabled" checked /></td>
-				<td class="content"><input name="host" class="host el-host" placeholder="Hosts / domains. Use coma to separate more. Use '::' to target this page." /></td>
-				<td class="no-padding"><a class="expands-site" href="#">open</a></td>
+				<td class="content"><input name="host" class="host el-host" placeholder="Hosts / domains. Use comma to separate more. Use '::' to target this page." /></td>
 			</tr>
 			<tr>
 				<th>Options</th>
@@ -40,18 +38,18 @@
 			<tr>
 				<th>JS</th>
 				<td class="content" colspan="2">
-					<textarea name="js" rows="3" class="code expands js el-js" placeholder="All script will be executed on DOMContentLoaded."></textarea>
+					<textarea name="js" rows="3" class="code expands js el-js" placeholder="Script is executed immediately, when readyState is 'loading'. Use ready(callback) (document DOMContentLoaded) and load(callback) (window load) to time your script."></textarea>
 				</td>
 			</tr>
 		</tbody>
 		<tfoot>
 			<tr>
-				<td colspan="3">
+				<td colspan="2">
 					<input type="submit" value="Save" disabled />
 					<input type="reset" value="Reset" disabled />
 					&nbsp;
 					<input type="button" value="Export" id="btn-export" disabled />
-					<!-- input type="button" value="Import" id="btn-import" / -->
+					<input type="button" value="Import" id="btn-import" disabled data-disabled />
 					&nbsp;
 					<input type="button" value="Stats" id="btn-stats" disabled />
 				</td>
