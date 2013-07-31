@@ -189,12 +189,18 @@ console.log('[RWeb helpers] Fetched sites for "' + host + '"', sites);
 			attachTo.appendChild(el);
 		}
 	},
-	js: function(site, wrap) {
+	js: function(site) {
 		var attachTo = document.head || document.body || document.documentElement;
 		if ( site.js && attachTo && location.protocol != 'chrome-extension:' ) {
 			var el = document.createElement('script');
 			el.dataset.origin = 'rweb';
-			var js = !wrap ? site.js : "document.addEventListener('DOMContentLoaded', function(e) {\n" + site.js + "\n});";
+
+			var js = '(function() {';
+			js += "var ready = function(cb) { document.readyState == 'interactive' ? cb() : document.addEventListener('DOMContentLoaded', cb); }\n";
+			js += "var load = function(cb) { document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true); }\n";
+			js += site.js;
+			js += "})();\n";
+
 			el.textContent = js;
 
 			attachTo.appendChild(el);
