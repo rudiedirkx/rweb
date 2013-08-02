@@ -4,7 +4,7 @@
  * [x] 'sites' in storage.sync should be 'chunks'
  * [x] Better dirty check: check hash or JSON, not just onchange (or better!)
  * [x] Unmark newly created site 'disabled' and 'new' so it's opaque after saving
- * [ ] Add onbeforeunload to warn about unsaved changes (with better dirty check)
+ * [x] Add onbeforeunload to warn about unsaved changes (with better dirty check)
  * [ ] Show online/offline/sync status in the sites table
  * [ ] Local option 'onBrowserActionClick':
  *      o open options
@@ -116,6 +116,9 @@ rweb.ui = {
 			// rweb.savePrefs(prefs);
 		// });
 	},
+	dirty: function() {
+		return rweb.ui._state != JSON.encode(rweb.ui.settings());
+	},
 	fill: function(elements, settings) {
 		$each(settings, function(value, name) {
 			var el = elements[name];
@@ -161,6 +164,12 @@ rweb.ui = {
 		;
 	},
 	addListeners: function() {
+		window.on('beforeunload', function(e) {
+			if ( rweb.ui.dirty() ) {
+				return "You have unsaved changes. Leaving this page will discard those changes.";
+			}
+		});
+
 		$sites
 			// Open site
 			.on('focus', '.el-host', function(e) {

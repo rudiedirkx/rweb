@@ -28,6 +28,9 @@ input[type=submit] {
 	text-transform: uppercase;
 	font-weight: bold;
 }
+::-webkit-input-placeholder {
+	color: #ccc;
+}
 
 body.loading::before {
 	content: "LOADING";
