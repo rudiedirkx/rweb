@@ -13,21 +13,16 @@
 	<table>
 		<thead>
 			<tr>
-				<th>Enabled</th>
-				<th>Settings</th>
+				<th>Enable?</th>
+				<th></th>
+				<th>Sync?</th>
 			</tr>
 		</thead>
 		<tbody class="new-site">
 			<tr>
-				<td class="enabled"><input type="checkbox" name="enabled" class="enabled el-enabled" checked /></td>
+				<td class="enabled checkboxify"><input type="checkbox" name="enabled" class="enabled el-enabled" checked /></td>
 				<td class="content"><input name="host" class="host el-host" placeholder="Hosts / domains. Use comma to separate more. Use '::' to target this page." /></td>
-			</tr>
-			<tr>
-				<th>Options</th>
-				<td class="options" colspan="2">
-					<label><input type="checkbox" name="sync" /> Sync up?</label>
-					<!-- label>JS <select name="js_exec"><option value="domready">ondomready<option value="load">onload</select></label -->
-				</td>
+				<td class="sync checkboxify"><label title="This will save this site into your Google profile and sync it with computers."><input type="checkbox" name="sync" class="el-sync" /></label></td>
 			</tr>
 			<tr>
 				<th>CSS</th>
@@ -44,7 +39,7 @@
 		</tbody>
 		<tfoot>
 			<tr>
-				<td colspan="2">
+				<td colspan="3">
 					<input type="submit" value="Save" disabled />
 					<input type="reset" value="Reset" disabled />
 					&nbsp;

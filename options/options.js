@@ -5,7 +5,7 @@
  * [x] Better dirty check: check hash or JSON, not just onchange (or better!)
  * [x] Unmark newly created site 'disabled' and 'new' so it's opaque after saving
  * [x] Add onbeforeunload to warn about unsaved changes (with better dirty check)
- * [ ] Show online/offline/sync status in the sites table
+ * [x] Show online/offline/sync status in the sites table
  * [ ] Local option 'onBrowserActionClick':
  *      o open options
  *      o open options with site prefilled
@@ -54,6 +54,10 @@ Element.extend({
 			cn = site.enabled ? 'enabled' : 'disabled';
 		this.removeClass('disabled').removeClass('enabled').addClass(cn);
 		return this;
+	},
+	toggleCheckboxify: function(cb) {
+		cb || (cb = this.getElement('input[type="checkbox"]'));
+		this.removeClass('checked').removeClass('unchecked').addClass(cb.checked ? 'checked' : 'unchecked');
 	}
 });
 
@@ -183,7 +187,7 @@ rweb.ui = {
 			})
 
 			// Toggle 'enabled'
-			.on('change', '.el-enabled', function() {
+			.on('change', '.el-enabled', rweb.ui.onendisable = function(e) {
 				var tbody = this.firstAncestor('tbody');
 				tbody.enabledOrDisabledClass();
 			})
@@ -196,6 +200,20 @@ rweb.ui = {
 					var tbody = this.firstAncestor('tbody');
 					rweb.ui.closeSites();
 				}
+			})
+
+			// Checkboxify
+			.on('click', '.checkboxify', function(e) {
+				var cb = this;
+				if ( e.target.nodeName != 'INPUT' ) {
+					cb = this.getElement('input[type="checkbox"]');
+					cb.checked = !cb.checked;
+
+					rweb.ui.onchange.call(cb, e);
+					rweb.ui.onendisable.call(cb, e);
+				}
+
+				this.toggleCheckboxify(cb);
 			})
 
 			// Save settings
@@ -236,7 +254,7 @@ rweb.ui = {
 			})
 
 			// Tag dirty
-			.on('change', function(e) {
+			.on('change', rweb.ui.onchange = function(e) {
 				var state = JSON.encode(rweb.ui.settings()),
 					changed = state != rweb.ui._state,
 					method = changed ? 'addClass' : 'removeClass';
@@ -261,6 +279,8 @@ rweb.ui = {
 				this.fixRows(this.rows);
 			})
 		;
+
+		$sites.getElements('.checkboxify').toggleCheckboxify();
 
 		$btnExport.on('click', function(e) {
 			var settings = rweb.ui.settings(false);

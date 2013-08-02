@@ -1,7 +1,7 @@
 
 pre {
 	padding: 20px;
-	background: #ddd;
+	background: #fff;
 	border: solid 1px #000;
 }
 
@@ -10,13 +10,16 @@ pre {
 }
 
 html {
-	background: #ddd;
+	background: #eee;
 	overflow-y: scroll;
 }
-input:not([type=submit]):not([type=button]):not([type=reset]), textarea, select {
-	padding: 5px;
-	background: #fff;
-	border: solid 1px #bbb;
+input:not([type=submit]):not([type=button]):not([type=reset]),
+textarea,
+select {
+	padding: 15px;
+	background: transparent;
+	border: solid 0 #bbb;
+	color: inherit;
 }
 input[type=submit],
 input[type=button],
@@ -29,7 +32,7 @@ input[type=submit] {
 	font-weight: bold;
 }
 ::-webkit-input-placeholder {
-	color: #ccc;
+	color: #bbb;
 }
 
 body.loading::before {
@@ -49,17 +52,20 @@ body.loading::before {
 	width: 100%;
 	border-spacing: 0;
 	border: solid 1px #aaa;
-	background: #ccc;
 }
 #sites tbody:not(.expanded) > tr:not(:first-child) {
 	display: none;
 }
-#sites tbody.expanded {
-	background: #aaa;
+#sites tbody:nth-child(even) tr:first-child {
+	background: #d7d7d7;
+}
+#sites tbody.expanded tr {
+	background: #888 !important;
+	color: white;
 }
 #sites th,
 #sites td {
-	padding: 5px;
+	padding: 0;
 	border: solid 1px #bbb;
 }
 #sites.saved table,
@@ -76,7 +82,17 @@ body.loading::before {
 #sites tbody.disabled {
 	opacity: 0.6;
 }
-#sites td.enabled {
+#sites td.checkboxify {
+	cursor: pointer;
+}
+#sites td.checkboxify.unchecked {
+	background-color: #faa;
+}
+#sites td.checkboxify.checked {
+	background-color: #afa;
+}
+#sites td.enabled,
+#sites td.sync {
 	text-align: center;
 }
 #sites td.content {
