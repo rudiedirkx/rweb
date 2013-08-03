@@ -15,6 +15,8 @@
  * [x] More useful stats in the status report, like hits & misses
  * [ ] Create indiscriminate import (only add, remove nothing)
  * [ ] Key sites by GUID so importing and syncing make sense
+ * [ ] ? Automatic indenting on { + ENTER and unindenting on }
+ * [ ] ? TAB options in options UI (ignore, tab=TAB, tab=CTRL+TAB)
  * [ ] ? Implement Select0r
  */
 
@@ -185,6 +187,9 @@ rweb.ui = {
 			.on('focus', 'textarea', function() {
 				this.fixRows(this.rows);
 			})
+			// .on('blur', 'textarea', function() {
+				// this.rows = 3;
+			// })
 
 			// Toggle 'enabled'
 			.on('change', '.el-enabled', rweb.ui.onendisable = function(e) {

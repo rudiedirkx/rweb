@@ -12,6 +12,7 @@ pre {
 html {
 	background: #eee;
 	overflow-y: scroll;
+	cursor: default;
 }
 input:not([type=submit]):not([type=button]):not([type=reset]),
 textarea,
@@ -20,6 +21,7 @@ select {
 	background: transparent;
 	border: solid 0 #bbb;
 	color: inherit;
+	cursor: default;
 }
 input[type=submit],
 input[type=button],
@@ -102,12 +104,16 @@ body.loading::before {
 	width: 100%;
 	display: block;
 }
+#sites tbody:not(.expanded) .el-host {
+	cursor: pointer;
+}
 #sites .options > label {
 	margin-right: 20px;
 }
 #sites textarea.code {
 	width: 100%;
 	display: block;
+	tab-size: 4;
 }
 
 #ta-export {
