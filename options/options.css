@@ -1,27 +1,30 @@
 
-pre {
-	padding: 20px;
-	background: #fff;
-	border: solid 1px #000;
-}
-
 * {
 	box-sizing: border-box;
 }
-
 html {
 	background: #eee;
 	overflow-y: scroll;
 	cursor: default;
 }
+body {
+	margin: 0;
+	padding: 20px;
+}
 input:not([type=submit]):not([type=button]):not([type=reset]),
 textarea,
 select {
+	padding: 5px;
+	border: solid 1px #bbb;
+	color: inherit;
+	cursor: default;
+}
+#sites input:not([type=submit]):not([type=button]):not([type=reset]),
+#sites textarea,
+#sites select {
 	padding: 15px;
 	background: transparent;
 	border: solid 0 #bbb;
-	color: inherit;
-	cursor: default;
 }
 input[type=submit],
 input[type=button],
@@ -37,6 +40,8 @@ input[type=submit] {
 	color: #bbb;
 }
 
+
+
 body.loading::before {
 	content: "LOADING";
 	display: block;
@@ -50,6 +55,8 @@ body.loading::before {
 	margin-bottom: 10px;
 }
 
+
+
 #sites table {
 	width: 100%;
 	border-spacing: 0;
@@ -61,6 +68,9 @@ body.loading::before {
 #sites tbody:nth-child(even) tr:first-child {
 	background: #d7d7d7;
 }
+#sites tbody.hilited tr:first-child {
+	background: lightblue;
+}
 #sites tbody.expanded tr {
 	background: #888 !important;
 	color: white;
@@ -69,6 +79,12 @@ body.loading::before {
 #sites td {
 	padding: 0;
 	border: solid 1px #bbb;
+}
+#sites thead th,
+#sites thead td,
+#sites tfoot th,
+#sites tfoot td {
+	padding: 5px 2px;
 }
 #sites.saved table,
 #sites.saved th,
@@ -116,6 +132,28 @@ body.loading::before {
 	tab-size: 4;
 }
 
+
+
+#prefs {
+	background: white;
+	padding: 10px;
+	box-shadow: 0 0 30px #bbb;
+}
+#prefs p {
+	margin: 0;
+}
+#prefs .saved {
+	color: green;
+	margin-left: 10px;
+}
+#prefs:not(.saved) .saved {
+	display: none;
+}
+
+
+form + p {
+	margin: 20px;
+}
 #ta-export {
 	width: 100%;
 }

@@ -6,7 +6,7 @@
  * [x] Unmark newly created site 'disabled' and 'new' so it's opaque after saving
  * [x] Add onbeforeunload to warn about unsaved changes (with better dirty check)
  * [x] Show online/offline/sync status in the sites table
- * [ ] Local option 'onBrowserActionClick':
+ * [x] Local option 'onBrowserActionClick':
  *      o open options
  *      o open options with site prefilled
  *      o open options with site hilited
@@ -21,6 +21,20 @@
  */
 
 Element.extend({
+	setNamedElementValues: function(values, initial) {
+		var els = this.getNamedElements();
+		$each(values, function(value, name) {
+			var el = els[name];
+			if ( el ) {
+				var bool = el.type == 'checkbox',
+					prop1 = bool ? 'checked' : 'value',
+					prop2 = bool ? 'defaultChecked' : 'defaultValue';
+				el[prop1] = value;
+				initial && (el[prop2] = value);
+			}
+		});
+		return els;
+	},
 	getNamedElementValues: function(update) {
 		var els = this.getNamedElements(),
 			options = {};
@@ -77,7 +91,7 @@ rweb.ui = {
 		$btnStats = $('btn-stats');
 		$table = $sites.getFirst();
 		$newSite = $table.getElement('tbody');
-		// $prefs = $('prefs');
+		$prefs = $('prefs');
 
 		// Sites
 		rweb.ui.buildSites(function() {
@@ -85,20 +99,30 @@ rweb.ui = {
 
 			// Select existing or new site
 			if ( location.hash.length > 1 ) {
-				var host = location.hash.substr(1),
-					site = document.querySelector('input[value="' + host + '"]'),
-					tbody;
-				if ( site ) {
-					tbody = site.firstAncestor('tbody');
-				}
-				else {
-					tbody = $('tbody.new-site', 1);
-				}
-				rweb.ui.openSite(tbody);
+				rweb.onBrowserActionClick(function(action) {
+					if ( action ) {
+						var host = location.hash.substr(1),
+							$site = document.querySelector('input[value="' + host + '"]'),
+							$tbody;
+						if ( $site ) {
+							$tbody = $site.firstAncestor('tbody');
+							if ( action == 'hilite' ) {
+								$tbody.addClass('hilited');
+							}
+						}
+						else {
+							$tbody = $('tbody.new-site', 1);
+						}
 
-				var $host = tbody.getElement('.el-host');
-				$host.value = host;
-				$host.focus();
+						if ( action == 'open' ) {
+							rweb.ui.openSite($tbody);
+
+							var $host = $tbody.getElement('.el-host');
+							$host.value = host;
+							$host.focus();
+						}
+					}
+				});
 			}
 
 			rweb.ui._state = JSON.encode(rweb.ui.settings());
@@ -108,41 +132,20 @@ rweb.ui = {
 			$$('tfoot input:not([data-disabled])').attr('disabled', null);
 		});
 
-		// Prefs
-		// var options = $prefs.getNamedElements();
-		// rweb.prefs(function(prefs) {
-// console.debug('Prefs from chrome.storage:\n', prefs);
-			// rweb.ui.fill(options, prefs);
-		// });
-		// $prefs.on('submit', function(e) {
-			// e.preventDefault();
-
-			// var prefs = $prefs.getNamedElementValues(true);
-			// console.debug(prefs);
-			// rweb.savePrefs(prefs);
-		// });
+		var prefs = $prefs.getNamedElementValues();
+		chrome.storage.local.get(Object.keys(prefs), function(items) {
+			$prefs.setNamedElementValues(items, true);
+		});
 	},
 	dirty: function() {
 		return rweb.ui._state != JSON.encode(rweb.ui.settings());
-	},
-	fill: function(elements, settings) {
-		$each(settings, function(value, name) {
-			var el = elements[name];
-			if ( el ) {
-				var bool = el.type == 'checkbox',
-					prop1 = bool ? 'checked' : 'value',
-					prop2 = bool ? 'defaultChecked' : 'defaultValue';
-				el[prop1] = el[prop2] = value;
-			}
-		});
 	},
 	buildSites: function(callback) {
 // console.time('[RWeb options] buildSites');
 		rweb.sites(null, function(sites) {
 			sites.each(function(site) {
-				var $tbody = document.el('tbody').setHTML($newSite.getHTML()).injectAfter($table.getFirst()),
-					options = $tbody.getNamedElements();
-				rweb.ui.fill(options, site);
+				var $tbody = document.el('tbody').setHTML($newSite.getHTML()).injectAfter($table.getFirst());
+				$tbody.setNamedElementValues(site, true);
 				$tbody.enabledOrDisabledClass();
 			});
 // console.timeEnd('[RWeb options] buildSites');
@@ -316,8 +319,8 @@ rweb.ui = {
 					site.sync ? online++ : offline++;
 				});
 				console.log('[RWeb report]', thousands(sites.length), 'sites');
-				console.log('[RWeb report]', thousands(offline), 'offline sites');
-				console.log('[RWeb report]', thousands(online), 'online sites');
+				console.log('[RWeb report]  ', thousands(offline), 'offline sites');
+				console.log('[RWeb report]  ', thousands(online), 'online sites');
 			});
 			chrome.storage.sync.get('chunks', function(items) {
 				console.log('[RWeb report]', thousands(items.chunks), 'online chunks (max chunk size =', thousands(chrome.storage.sync.QUOTA_BYTES_PER_ITEM), ')');
@@ -334,9 +337,22 @@ rweb.ui = {
 				if ( items.history ) {
 					console.log('[RWeb report] Matching history:');
 					$each(items.history, function(num, host) {
-						console.log('[RWeb report]   ', thousands(num), 'x - ' + host);
+						console.log('[RWeb report]  ', thousands(num), 'x - ' + host);
 					});
 				}
+			});
+		});
+
+		$prefs.on('submit', function(e) {
+			e.preventDefault();
+
+			var prefs = this.getNamedElementValues(true);
+
+			chrome.storage.local.set(prefs, function(items) {
+				$prefs.addClass('saved');
+				setTimeout(function() {
+					$prefs.removeClass('saved');
+				}, 1000);
 			});
 		});
 	}

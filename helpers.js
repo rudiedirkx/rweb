@@ -8,14 +8,11 @@ rweb = {
 		return host.replace(/^www\./, '');
 	},
 
-	// savePrefs: function(prefs, callback) {
-		// chrome.storage[rweb.STORAGE].set({prefs: prefs}, callback);
-	// },
-	// prefs: function(callback) {
-		// chrome.storage[rweb.STORAGE].get('prefs', function(items) {
-			// callback(items.prefs || {});
-		// });
-	// },
+	onBrowserActionClick: function(callback) {
+		chrome.storage.local.get('onBrowserActionClick', function(items) {
+			callback(items.onBrowserActionClick || '');
+		});
+	},
 
 	matched: function(host, sites, callback) {
 		if ( sites && sites.length ) {

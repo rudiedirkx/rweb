@@ -5,7 +5,12 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 	var host = rweb.host(a.host);
 
 	var uri = chrome.extension.getURL('options/options.html');
-	open(uri + '#' + host);
+	rweb.onBrowserActionClick(function(action) {
+		if ( action ) {
+			uri += '#' + host;
+		}
+		open(uri);
+	});
 });
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {

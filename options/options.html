@@ -22,7 +22,7 @@
 			<tr>
 				<td class="enabled checkboxify"><input type="checkbox" name="enabled" class="enabled el-enabled" checked /></td>
 				<td class="content"><input name="host" class="host el-host" placeholder="Hosts / domains. Use comma to separate more. Use '::' to target this page." /></td>
-				<td class="sync checkboxify"><label title="This will save this site into your Google profile and sync it with computers."><input type="checkbox" name="sync" class="el-sync" /></label></td>
+				<td class="sync checkboxify" title="This will save this site into your Google profile and sync it with computers."><label><input type="checkbox" name="sync" class="el-sync" /></label></td>
 			</tr>
 			<tr>
 				<th>CSS</th>
@@ -55,13 +55,13 @@
 
 <p><textarea style="display: none" rows="4" id="ta-export"></textarea></p>
 
-<!-- form id="prefs">
+<form id="prefs">
 	<p>
-		Object store: <input name="object_store" value="http://localhost/tests/object-store.php" />
-		Sync secret: <input name="sync_secret" />
+		onBrowserActionClick: <select name="onBrowserActionClick"><option value="">Open options<option value="hilite">Open options & hilite site<option value="open">Open options & open site</select>
 		<input type="submit" value="Save" />
+		<span class="saved">Saved!</span>
 	</p>
-</form -->
+</form>
 
 <script type="text/javascript" src="rjs.js"></script>
 <script type="text/javascript" src="../helpers.js"></script>
