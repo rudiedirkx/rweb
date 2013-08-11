@@ -106,12 +106,17 @@ rweb.ui = {
 							$tbody;
 						if ( $site ) {
 							$tbody = $site.firstAncestor('tbody');
-							if ( action == 'hilite' ) {
-								$tbody.addClass('hilited');
-							}
 						}
 						else {
 							$tbody = $('tbody.new-site', 1);
+						}
+
+						if ( action == 'hilite' ) {
+							$tbody.addClass('hilited');
+							if ( !$site ) {
+								var $host = $tbody.getElement('.el-host');
+								$host.value = host;
+							}
 						}
 
 						if ( action == 'open' ) {
