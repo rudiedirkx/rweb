@@ -36,6 +36,9 @@ input[type=submit] {
 	text-transform: uppercase;
 	font-weight: bold;
 }
+form, p {
+	margin: 0 0 1em;
+}
 ::-webkit-input-placeholder {
 	color: #bbb;
 }
@@ -151,9 +154,7 @@ body.loading::before {
 }
 
 
-form + p {
-	margin: 20px;
-}
-#ta-export {
+#ta-export,
+#ta-import {
 	width: 100%;
 }

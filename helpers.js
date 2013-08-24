@@ -184,6 +184,16 @@ console.log('[RWeb helpers] Fetched sites for "' + host + '"', sites);
 		});
 	},
 
+	sitesByUUID: function(callback) {
+		return rweb.sites(null, function(list) {
+			var sites = {};
+			list.forEach(function(site) {
+				sites[site.id] = site;
+			});
+			callback(sites, list);
+		});
+	},
+
 	css: function(site) {
 		var attachTo = document.head || document.body || document.documentElement;
 		if ( site.css && attachTo ) {

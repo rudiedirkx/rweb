@@ -47,7 +47,7 @@
 					<input type="reset" value="Reset" disabled />
 					&nbsp;
 					<input type="button" value="Export" id="btn-export" disabled />
-					<input type="button" value="Import" id="btn-import" disabled data-disabled />
+					<input type="button" value="Import" id="btn-import" disabled />
 					&nbsp;
 					<input type="button" value="Stats" id="btn-stats" disabled />
 				</td>
@@ -56,7 +56,12 @@
 	</table>
 </form>
 
-<p><textarea style="display: none" rows="4" id="ta-export"></textarea></p>
+<p><textarea style="display: none" rows="6" id="ta-export"></textarea></p>
+
+<form id="form-import" style="display: none">
+	<textarea rows="6" name="code" id="ta-import">[{"host": "example.com", "css": "body.example.com { background: red; }", "js": "", "enabled": false, "sync": false}]</textarea><br>
+	<input type="submit" value="Import" />
+</form>
 
 <form id="prefs">
 	<p>

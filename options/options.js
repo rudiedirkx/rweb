@@ -14,7 +14,7 @@
  * [x] Create a status report with useless statistics
  * [x] More useful stats in the status report, like hits & misses
  * [x] Key sites by UUID so importing and syncing make sense
- * [ ] Create import that respects UUIDs
+ * [x] Create import that respects UUIDs
  * [ ] ? Automatic indenting on { + ENTER and unindenting on }
  * [ ] ? TAB options in options UI (ignore, tab=TAB, tab=CTRL+TAB)
  * [ ] ? Implement Select0r
@@ -84,7 +84,7 @@ Element.extend({
 
 
 
-var $sites, $btnExport, $btnStats, $table, $newSite, $prefs;
+var $sites, $btnExport, $btnImport, $formImport, $btnStats, $table, $newSite, $prefs;
 
 rweb.ui = {
 	_state: '',
@@ -93,6 +93,8 @@ rweb.ui = {
 		// Elements
 		$sites = $('sites');
 		$btnExport = $('btn-export');
+		$btnImport = $('btn-import');
+		$formImport = $('form-import');
 		$btnStats = $('btn-stats');
 		$table = $sites.getFirst();
 		$newSite = $table.getElement('tbody');
@@ -153,6 +155,9 @@ rweb.ui = {
 	dirty: function() {
 		return rweb.ui._state != JSON.encode(rweb.ui.settings());
 	},
+	siteFilter: function(site) {
+		return site.host && ( site.js || site.css );
+	},
 	buildSites: function(callback) {
 // console.time('[RWeb options] buildSites');
 		rweb.sites(null, function(sites) {
@@ -180,9 +185,7 @@ rweb.ui = {
 			.map(function(tb) {
 				return tb.getNamedElementValues(feedback);
 			})
-			.filter(function(setting) {
-				return setting.host && ( setting.js || setting.css );
-			})
+			.filter(rweb.ui.siteFilter)
 		;
 	},
 	addListeners: function() {
@@ -304,6 +307,8 @@ rweb.ui = {
 		$sites.getElements('.checkboxify').toggleCheckboxify();
 
 		$btnExport.on('click', function(e) {
+			$('form-import').hide();
+
 			var settings = rweb.ui.settings(false);
 
 			var ta = $('ta-export');
@@ -311,6 +316,59 @@ rweb.ui = {
 			ta.show().focus();
 			ta.selectionStart = 0;
 			ta.selectionEnd = ta.value.length;
+		});
+
+		$btnImport.on('click', function(e) {
+			$('ta-export').hide();
+
+			$('form-import').show();
+			$('ta-import').focus();
+		});
+
+		$formImport.on('submit', function(e) {
+			e.preventDefault();
+
+			// Parse import
+			var code = this.elements.code.value;
+console.log(code);
+			try {
+				var newSites = JSON.parse(code);
+			}
+			catch (ex) {
+				alert('Invalid code:\n\n' + ex);
+			}
+
+			// Validate import
+			if ( newSites instanceof Array ) {
+				newSites = newSites.filter(rweb.ui.siteFilter);
+				if ( newSites.length ) {
+					return rweb.sitesByUUID(function(existingSites, existingSitesList) {
+						var add = [],
+							update = 0;
+						newSites.forEach(function(site) {
+							if ( !site.id || !existingSites[site.id] ) {
+								site.id || (site.id = rweb.uuid());
+								add.push(site);
+							}
+							else {
+								$merge(existingSites[site.id], site);
+								update++;
+							}
+						});
+						// Summarize & confirm
+						if ( confirm('Import summary:\n\n' + add.length + ' sites will be added\n' + update + ' sites will be updated\n\nDo you agree? Changes will be saved directly and cannot be undone.') ) {
+							add.forEach(function(site) {
+								existingSitesList.push(site);
+							});
+							rweb.saveSites(existingSitesList, function() {
+								location.reload();
+							});
+						}
+					});
+				}
+				return alert('No valid sites found');
+			}
+			return alert('Not an array of sites');
 		});
 
 		$btnStats.on('click', function(e) {
