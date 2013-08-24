@@ -21,7 +21,10 @@
 		<tbody class="new-site">
 			<tr>
 				<td class="enabled checkboxify"><input type="checkbox" name="enabled" class="enabled el-enabled" checked /></td>
-				<td class="content"><input name="host" class="host el-host" placeholder="Hosts / domains. Use comma to separate more. Use '::' to target this page." /></td>
+				<td class="content">
+					<input name="id" type="hidden" />
+					<input name="host" class="host el-host" placeholder="Hosts / domains. Use comma to separate more. Use '::' to target this page." />
+				</td>
 				<td class="sync checkboxify" title="This will save this site into your Google profile and sync it with computers."><label><input type="checkbox" name="sync" class="el-sync" /></label></td>
 			</tr>
 			<tr>

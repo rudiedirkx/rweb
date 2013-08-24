@@ -13,8 +13,8 @@
  *      o start select0r
  * [x] Create a status report with useless statistics
  * [x] More useful stats in the status report, like hits & misses
- * [ ] Create indiscriminate import (only add, remove nothing)
- * [ ] Key sites by GUID so importing and syncing make sense
+ * [x] Key sites by UUID so importing and syncing make sense
+ * [ ] Create import that respects UUIDs
  * [ ] ? Automatic indenting on { + ENTER and unindenting on }
  * [ ] ? TAB options in options UI (ignore, tab=TAB, tab=CTRL+TAB)
  * [ ] ? Implement Select0r
@@ -37,15 +37,20 @@ Element.extend({
 	},
 	getNamedElementValues: function(update) {
 		var els = this.getNamedElements(),
-			options = {};
+			options = {},
+			id = rweb.uuid();
 		$each(els, function(el, name) {
 			var value = el.type === 'checkbox' ? el.checked : el.value.trim();
+			if ( name == 'id' && !value ) {
+				el.value = value = id;
+			}
 			if ( update ) {
 				el.type === 'checkbox' ? el.defaultChecked = el.checked : el.defaultValue = el.value;
 			}
 			options[name] = value;
 		});
 		options.host && (options.host = options.host.replace(/ /g, ''));
+		options.id || (options.id = id);
 		return options;
 	},
 	getNamedElements: function() {

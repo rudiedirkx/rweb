@@ -33,4 +33,24 @@ rweb.updates = [
 		});
 	},
 
+
+
+	/**
+	 * Add UUID to existing sites
+	 */
+
+	function(next) {
+		// Fetch
+		rweb.sites(null, function(sites) {
+			// Alter
+			sites.forEach(function(site) {
+				site.id = rweb.uuid();
+			});
+			// Save
+			rweb.saveSites(sites, function() {
+				next();
+			});
+		});
+	},
+
 ];
