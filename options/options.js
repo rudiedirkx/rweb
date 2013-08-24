@@ -120,7 +120,10 @@ rweb.ui = {
 							$tbody.addClass('hilited');
 							if ( !$site ) {
 								var $host = $tbody.getElement('.el-host');
-								$host.value = host;
+								$host.on('focus', function tmpOnFocus() {
+									this.value = host;
+									this.off('focus', tmpOnFocus);
+								});
 							}
 						}
 
