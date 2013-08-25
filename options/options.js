@@ -20,6 +20,8 @@
  * [ ] ? Implement Select0r
  */
 
+console.time('UI loaded');
+
 Element.extend({
 	setNamedElementValues: function(values, initial) {
 		var els = this.getNamedElements();
@@ -106,7 +108,7 @@ rweb.ui = {
 		$prefs = $('prefs');
 
 		// Sites
-		rweb.ui.buildSites(function() {
+		rweb.ui.buildSites(function(sites) {
 			rweb.ui.addListeners();
 
 			// Auto indenting of code textareas
@@ -124,6 +126,10 @@ rweb.ui = {
 				rweb.onBrowserActionClick(function(action) {
 					if ( action ) {
 						var host = location.hash.substr(1),
+							matchingSites = rweb.hostFilter(sites, host, false),
+							matchingTbodies = new Elements(matchingSites.map(function(site) {
+								return $('input[value="' + site.id + '"]', true).firstAncestor('tbody');
+							})),
 							$site = document.querySelector('input[value="' + host + '"]'),
 							$tbody;
 						if ( $site ) {
@@ -134,7 +140,7 @@ rweb.ui = {
 						}
 
 						if ( action == 'hilite' ) {
-							$tbody.addClass('hilited');
+							matchingTbodies.addClass('hilited');
 							if ( !$site ) {
 								var $host = $tbody.getElement('.el-host');
 								$host.on('focus', function tmpOnFocus() {
@@ -160,6 +166,8 @@ rweb.ui = {
 			document.body.removeClass('loading');
 
 			$$('tfoot input:not([data-disabled])').attr('disabled', null);
+
+			console.timeEnd('UI loaded');
 		});
 
 		rweb.ui.getPrefs(function(items) {
@@ -186,7 +194,7 @@ rweb.ui = {
 			});
 // console.timeEnd('[RWeb options] buildSites');
 
-			callback();
+			callback(sites);
 		});
 	},
 	openSite: function(tbody) {
@@ -246,7 +254,7 @@ rweb.ui = {
 
 			// Checkboxify
 			.on('click', '.checkboxify', function(e) {
-				var cb = this;
+				var cb = e.target;
 				if ( e.target.nodeName != 'INPUT' ) {
 					cb = this.getElement('input[type="checkbox"]');
 					cb.checked = !cb.checked;

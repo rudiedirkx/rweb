@@ -83,6 +83,12 @@ rweb = {
 			chrome.storage.sync.set(chunks, cbProxy);
 		});
 	},
+	hostFilter: function(sites, host, enabled) {
+		enabled == null && (enabled = true);
+		return sites.filter(function(site) {
+			return ( !enabled || site.enabled ) && site.host.split(',').indexOf(host) != -1;
+		});
+	},
 	sites: function(host, callback) {
 		var saved = 0,
 			requireSaves = 2,
@@ -185,12 +191,22 @@ console.log('[RWeb helpers] Fetched sites for "' + host + '"', sites);
 	},
 
 	sitesByUUID: function(callback) {
-		return rweb.sites(null, function(list) {
+		var handler = function(list) {
 			var sites = {};
 			list.forEach(function(site) {
 				sites[site.id] = site;
 			});
-			callback(sites, list);
+			return sites;
+		};
+
+		// Sites passed
+		if ( callback instanceof Array ) {
+			return handler(callback);
+		}
+
+		// Fetch sites now
+		return rweb.sites(null, function(list) {
+			callback(handler(list), list);
 		});
 	},
 
