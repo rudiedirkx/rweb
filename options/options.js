@@ -50,7 +50,9 @@ Element.extend({
 			options[name] = value;
 		});
 		options.host && (options.host = options.host.replace(/ /g, ''));
-		options.id || (options.id = id);
+		if ( 'host' in options ) {
+			options.id || (options.id = id);
+		}
 		return options;
 	},
 	getNamedElements: function() {
@@ -104,6 +106,16 @@ rweb.ui = {
 		rweb.ui.buildSites(function() {
 			rweb.ui.addListeners();
 
+			// Auto indenting of code textareas
+			rweb.ui.getPrefs(function(prefs) {
+				if ( prefs.autoIndent ) {
+					var indent = decodeURIComponent(prefs.autoIndent);
+					$sites.getElements('.code').each(function(textarea) {
+						doAutoIndent(textarea, indent);
+					});
+				}
+			});
+
 			// Select existing or new site
 			if ( location.hash.length > 1 ) {
 				rweb.onBrowserActionClick(function(action) {
@@ -147,10 +159,13 @@ rweb.ui = {
 			$$('tfoot input:not([data-disabled])').attr('disabled', null);
 		});
 
-		var prefs = $prefs.getNamedElementValues();
-		chrome.storage.local.get(Object.keys(prefs), function(items) {
+		rweb.ui.getPrefs(function(items) {
 			$prefs.setNamedElementValues(items, true);
 		});
+	},
+	getPrefs: function(callback) {
+		var prefs = $prefs.getNamedElementValues();
+		chrome.storage.local.get(Object.keys(prefs), callback);
 	},
 	dirty: function() {
 		return rweb.ui._state != JSON.encode(rweb.ui.settings());
