@@ -15,7 +15,7 @@
  * [x] More useful stats in the status report, like hits & misses
  * [x] Key sites by UUID so importing and syncing make sense
  * [x] Create import that respects UUIDs
- * [ ] ? Automatic indenting on { + ENTER and unindenting on }
+ * [x] Automatic indenting on { + ENTER and unindenting on }
  * [ ] ? TAB options in options UI (ignore, tab=TAB, tab=CTRL+TAB)
  * [ ] ? Implement Select0r
  */
@@ -29,6 +29,9 @@ Element.extend({
 				var bool = el.type == 'checkbox',
 					prop1 = bool ? 'checked' : 'value',
 					prop2 = bool ? 'defaultChecked' : 'defaultValue';
+				if ( name == 'host' ) {
+					value = value.replace(/,/g, ', ');
+				}
 				el[prop1] = value;
 				initial && (el[prop2] = value);
 			}
