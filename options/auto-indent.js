@@ -26,7 +26,7 @@ function doAutoIndent(textarea, indent) {
 
 	function removeIndent(ta, before, after) {
 		ta._lastValue = ta.value = before.slice(0, -1-indent.length) + '}' + after;
-		ta.selectionStart = ta.selectionEnd = before.length-indent;
+		ta.selectionStart = ta.selectionEnd = before.length - indent.length;
 	}
 
 	function getPrevLine(ta, before) {
