@@ -83,6 +83,9 @@ rweb = {
 			chrome.storage.sync.set(chunks, cbProxy);
 		});
 	},
+	hostMatch: function(hosts, host) {
+		return hosts.split(',').indexOf(host) != -1;
+	},
 	hostFilter: function(sites, host, enabled) {
 		enabled == null && (enabled = true);
 		return sites.filter(function(site) {

@@ -290,6 +290,18 @@ rweb.ui = {
 					setTimeout(function() {
 						$sites.removeClass('saved');
 					}, 1000);
+
+					// Propagate new CSS to open tabs
+					var focused = document.activeElement;
+					if ( focused ) {
+						var tbody = focused.firstAncestor('tbody');
+						if ( tbody ) {
+							var updatedHosts = tbody.getElement('.el-host');
+							if ( updatedHosts ) {
+								rweb.ui.propagateNewCSS(updatedHosts.value);
+							}
+						}
+					}
 				});
 			})
 
@@ -450,6 +462,27 @@ console.log(code);
 				setTimeout(function() {
 					$prefs.removeClass('saved');
 				}, 1000);
+			});
+		});
+	},
+	propagateNewCSS: function(updatedHosts) {
+		chrome.tabs.query({active: false}, function(tabs) {
+			tabs.forEach(function(tab) {
+				var a = document.createElement('a');
+				a.href = tab.url;
+				var host = rweb.host(a.host);
+				if ( rweb.hostMatch(updatedHosts, host) ) {
+					var sites = sites = rweb.ui.settings(),
+						matches = rweb.hostFilter(sites, host),
+						css = '';
+					matches.forEach(function(site) {
+						css += site.css.trim() + "\n\n";
+					});
+					console.log('[RWeb options] Propagating new CSS to', host);
+					chrome.tabs.sendMessage(tab.id, {cssUpdate: css}, function(response) {
+						console.log('[RWeb options] Propagated new CSS to', host, response);
+					});
+				}
 			});
 		});
 	}
