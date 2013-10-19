@@ -1,7 +1,9 @@
 {
 	"name": "R Web",
 	"description": "R Web",
-	"permissions": [ "storage", "tabs" ],
+
+	"permissions": [ "storage" ],
+	"optional_permissions": [ "tabs" ],
 
 	"options_page": "options/options.html",
 	"content_scripts": [

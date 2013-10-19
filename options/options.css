@@ -154,6 +154,32 @@ body.loading::before {
 }
 
 
+
+#permissions .grant,
+#permissions .revoke {
+	xdisplay: inline-block;
+	padding: 4px 7px;
+	border-radius: 3px;
+	background-color: red;
+	color: white;
+	font-weight: bold;
+	font-size: 1.1em;
+	text-decoration: none;
+}
+#permissions .revoke {
+	background-color: green;
+}
+#permissions .grant:focus,
+#permissions .revoke:focus {
+	outline: solid 4px black;
+}
+#permissions li[data-permission].has .grant,
+#permissions li[data-permission]:not(.has) .revoke {
+	display: none;
+}
+
+
+
 #ta-export,
 #ta-import {
 	width: 100%;

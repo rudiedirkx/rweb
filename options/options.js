@@ -107,7 +107,7 @@ rweb.ui = {
 		$newSite = $table.getElement('tbody');
 		$prefs = $('prefs');
 
-		// Sites
+		// BUILD SITES
 		rweb.ui.buildSites(function(sites) {
 			rweb.ui.addListeners();
 
@@ -170,8 +170,42 @@ rweb.ui = {
 			console.timeEnd('UI loaded');
 		});
 
+		// SHOW PREFERENCES
 		rweb.ui.getPrefs(function(items) {
 			$prefs.setNamedElementValues(items, true);
+		});
+
+		// SHOW OPTIONAL PERMISSIONS
+		rweb.ui.updateOptionalPermissions();
+	},
+	updateOptionalPermissions: function(callback) {
+		var $perms = $$('#permissions li[data-permission]');
+
+		// Cycle through optional permissions to update status and show buttons
+		$perms.each(function($li) {
+			if ( !$li.getElement('.grant') ) {
+				$li.innerHTML += ' <a href class="grant">GRANT</a> <a href class="revoke">REVOKE</a>';
+			}
+
+			var perm = $li.dataset.permission;
+			chrome.permissions.contains({permissions: [perm]}, function(has) {
+				var method = has ? 'addClass' : 'removeClass';
+				$li[method]('has');
+			});
+		});
+
+		// Attach listeners to buttons to toggle permission
+		$('permissions').on('click', '.grant, .revoke', function(e) {
+			e.preventDefault();
+
+			var $li = this.firstAncestor('[data-permission]'),
+				perm = $li.dataset.permission,
+				has = $li.hasClass('has'),
+				method = has ? 'remove' : 'request';
+			chrome.permissions[method]({permissions: [perm]}, function(done) {
+				// Can't interpret new status, so just update visuals
+				rweb.ui.updateOptionalPermissions();
+			});
 		});
 	},
 	getPrefs: function(callback) {
@@ -466,8 +500,19 @@ console.log(code);
 		});
 	},
 	propagateNewCSS: function(updatedHosts) {
+		var permission = null;
 		chrome.tabs.query({active: false}, function(tabs) {
 			tabs.forEach(function(tab) {
+				if ( !tab.url ) {
+					if ( permission === null ) {
+						console.warn('[RWeb options] Could not propagate updated CSS to', updatedHosts, '. Check optional permissions.');
+						permission = false;
+					}
+					return;
+				}
+
+				permission = true;
+
 				var a = document.createElement('a');
 				a.href = tab.url;
 				var host = rweb.host(a.host);
