@@ -239,6 +239,17 @@ console.log('[RWeb helpers] Fetched sites for "' + host + '"', sites);
 
 			attachTo.appendChild(el);
 		}
+	},
+	thousands: function(num, nokilo) {
+		if ( !nokilo && num > 5000 ) {
+			return rweb.thousands(num/1000, true) + ' k';
+		}
+
+		if ( num < 100 ) {
+			return String(Math.round(num*10) / 10);
+		}
+
+		return String(Math.round(num)).split('').reverse().join('').match(/.{1,3}/g).join(',').split('').reverse().join('');
 	}
 };
 

@@ -444,43 +444,31 @@ console.log(code);
 		});
 
 		$btnStats.on('click', function(e) {
-			function thousands(num, nokilo) {
-				if ( !nokilo && num > 5000 ) {
-					return thousands(num/1000, true) + ' k';
-				}
-
-				if ( num < 100 ) {
-					return String(Math.round(num*10) / 10);
-				}
-
-				return String(Math.round(num)).split('').reverse().join('').match(/.{1,3}/g).join(',').split('').reverse().join('');
-			}
-
 			rweb.sites(null, function(sites) {
 				var online = 0, offline = 0;
 				sites.forEach(function(site) {
 					site.sync ? online++ : offline++;
 				});
-				console.log('[RWeb report]', thousands(sites.length), 'sites');
-				console.log('[RWeb report]  ', thousands(offline), 'offline sites');
-				console.log('[RWeb report]  ', thousands(online), 'online sites');
+				console.log('[RWeb report]', rweb.thousands(sites.length), 'sites');
+				console.log('[RWeb report]  ', rweb.thousands(offline), 'offline sites');
+				console.log('[RWeb report]  ', rweb.thousands(online), 'online sites');
 			});
 			chrome.storage.sync.get('chunks', function(items) {
-				console.log('[RWeb report]', thousands(items.chunks), 'online chunks (max chunk size =', thousands(chrome.storage.sync.QUOTA_BYTES_PER_ITEM), ')');
+				console.log('[RWeb report]', rweb.thousands(items.chunks), 'online chunks (max chunk size =', rweb.thousands(chrome.storage.sync.QUOTA_BYTES_PER_ITEM), ')');
 			});
 			chrome.storage.sync.getBytesInUse(null, function(bytes) {
 				var pct = Math.ceil(100 * bytes / (chrome.storage.sync.QUOTA_BYTES * rweb.USABLE_ONLINE_STORAGE));
-				console.log('[RWeb report]', thousands(bytes), '/', thousands(chrome.storage.sync.QUOTA_BYTES * rweb.USABLE_ONLINE_STORAGE), 'bytes (', pct, '%) online storage in use');
+				console.log('[RWeb report]', rweb.thousands(bytes), '/', rweb.thousands(chrome.storage.sync.QUOTA_BYTES * rweb.USABLE_ONLINE_STORAGE), 'bytes (', pct, '%) online storage in use');
 			});
 			chrome.storage.local.getBytesInUse(null, function(bytes) {
 				var pct = Math.ceil(100 * bytes / (chrome.storage.local.QUOTA_BYTES));
-				console.log('[RWeb report]', thousands(bytes), '/', thousands(chrome.storage.local.QUOTA_BYTES), 'bytes (', pct, '%) offline storage in use');
+				console.log('[RWeb report]', rweb.thousands(bytes), '/', rweb.thousands(chrome.storage.local.QUOTA_BYTES), 'bytes (', pct, '%) offline storage in use');
 			});
 			chrome.storage.local.get('history', function(items) {
 				if ( items.history ) {
 					console.log('[RWeb report] Matching history:');
 					$each(items.history, function(num, host) {
-						console.log('[RWeb report]  ', thousands(num), 'x - ' + host);
+						console.log('[RWeb report]  ', rweb.thousands(num), 'x - ' + host);
 					});
 				}
 			});
@@ -523,9 +511,9 @@ console.log(code);
 					matches.forEach(function(site) {
 						css += site.css.trim() + "\n\n";
 					});
-					console.log('[RWeb options] Propagating new CSS to', host);
-					chrome.tabs.sendMessage(tab.id, {cssUpdate: css}, function(response) {
-						console.log('[RWeb options] Propagated new CSS to', host, response);
+					console.debug('[RWeb options] Propagating new CSS to', host);
+					chrome.tabs.sendMessage(tab.id, {cssUpdate: css}, function(rsp) {
+						console.debug('[RWeb options] Propagated new CSS to', host, rsp);
 					});
 				}
 			});
