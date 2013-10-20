@@ -2,52 +2,39 @@
 var host = rweb.host(location.host);
 console.log('[RWeb content] Fetching sites for "' + host + '"');
 
-if ( !sessionStorage.rweb_disabled ) {
-	rweb.sites(host, function(sites) {
-		rweb.matched(host, sites);
+rweb.sites(host, function(sites) {
+	rweb.matched(host, sites);
 
-		// Update browser action
-		chrome.runtime.sendMessage({sites: sites, host: host}, function(response) {
-			// I don't care. background.js will have triggered the badge, or not
-		});
-
-		// Add CSS & JS
-		sites.forEach(function(site) {
-			rweb.css(site);
-			rweb.js(site);
-		});
+	// Update browser action
+	chrome.runtime.sendMessage({sites: sites, host: host}, function(response) {
+		// I don't care. background.js will have triggered the badge, or not
 	});
-}
+
+	// Add CSS & JS
+	sites.forEach(function(site) {
+		rweb.css(site);
+		rweb.js(site);
+	});
+}, true);
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if ( msg.rweb && 'disabled' in msg.rweb ) {
-		// Requesting disabled status from sessionStorage
-		if ( msg.rweb.disabled == '?' ) {
-			var stylingDisabled = sessionStorage.rweb_disabled == '1' ? '1' : '';
-			sendResponse({"disabled": stylingDisabled});
+		// Immediately update page
+		if ( msg.rweb.disabled ) {
+			// Remove all CSS
+			doCSSUpdate('');
 		}
-		// Saving disabled status into sessionStorage
 		else {
-			sessionStorage.rweb_disabled = msg.rweb.disabled ? '1' : '';
-			sendResponse({"disabled": sessionStorage.rweb_disabled});
+			// Fetch live CSS
+			rweb.sites(host, function(sites) {
+				rweb.matched(host, sites);
 
-			// Immediately update page
-			if ( sessionStorage.rweb_disabled ) {
-				// Remove all CSS
-				doCSSUpdate('');
-			}
-			else {
-				// Fetch live CSS
-				rweb.sites(host, function(sites) {
-					rweb.matched(host, sites);
-
-					var css = '';
-					sites.forEach(function(site) {
-						css += site.css.trim() + "\n\n";
-					});
-					doCSSUpdate(css);
+				var css = '';
+				sites.forEach(function(site) {
+					css += site.css.trim() + "\n\n";
 				});
-			}
+				doCSSUpdate(css);
+			});
 		}
 	}
 });

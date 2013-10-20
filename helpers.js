@@ -12,7 +12,11 @@ rweb = {
 		});
 	},
 
-	host: function(host) {
+	host: function(host, m) {
+		if ( m = host.match(/\/\/([^/]+)\//) ) {
+			host = m[1];
+		}
+
 		return host.replace(/^www\./, '');
 	},
 
@@ -92,12 +96,16 @@ rweb = {
 			return ( !enabled || site.enabled ) && site.host.split(',').indexOf(host) != -1;
 		});
 	},
-	sites: function(host, callback) {
+	sites: function(host, callback, checkDisabled) {
 		var saved = 0,
 			requireSaves = 2,
 			cbProxy = function() {
 				if ( ++saved == requireSaves ) {
 					// All sites, online & offline have been fetched
+
+					if ( checkDisabled && disabled[host] ) {
+						return console.warn('[RWeb] RWeb was explicitly disabled for this host', host);
+					}
 
 					// If this is a query, don't bother sorting, but filter
 					if ( host ) {
@@ -122,7 +130,8 @@ console.log('[RWeb helpers] Fetched sites for "' + host + '"', sites);
 				}
 			},
 			onlineData = '',
-			sites = [];
+			sites = [],
+			disabled;
 
 		function addSites(source) {
 // console.debug('addSites', source.length);
@@ -181,7 +190,8 @@ console.log('[RWeb helpers] Fetched sites for "' + host + '"', sites);
 		});
 
 		// Get OFFLINE
-		chrome.storage.local.get('sites', function(items) {
+		chrome.storage.local.get(['sites', 'disabled'], function(items) {
+			disabled = items.disabled || {};
 // console.debug('offline sites', items.sites);
 			if ( items.sites ) {
 				addSites(items.sites);

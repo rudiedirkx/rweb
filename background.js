@@ -1,27 +1,71 @@
 
 try {
+	var disabled = {}, // local cache, just for speed
+		labels = [
+			'Disable indefinitely for this website',
+			'DISABLED - Enable for this website',
+		];
+
 	var menuItemId = chrome.contextMenus.create({
-		"title": 'DISABLE for this website',
-		"type": 'checkbox',
+		"title": labels[0],
 		"documentUrlPatterns": ['http://*/*', 'https://*/*'],
 		"onclick": function(info, tab) {
-			var disabled = info.checked ? '1' : '';
+			if ( !tab.url ) {
+				return console.warn('[RWeb] Could not read origin tab URL. Check optional permissions.');
+			}
 
-			// Update tabs, like options.js does & save setting
-			chrome.tabs.sendMessage(tab.id, {"rweb": {"disabled": disabled}} /*, function(rsp) {
-				console.log('Checkbox saved on', tab.url, rsp);
-			}*/ );
+			var host = rweb.host(tab.url);
+
+			if ( host in disabled ) {
+				toggleDisabled(disabled, host, tab);
+			}
+			else {
+				chrome.storage.local.get('disabled', function(items) {
+					items.disabled || (items.disabled = {});
+					toggleDisabled(items.disabled, host, tab);
+				});
+			}
 		}
 	});
 
-	chrome.tabs.onHighlighted.addListener(function(info) {
-		chrome.tabs.sendMessage(info.tabIds[0], {"rweb": {"disabled": "?"}}, function(rsp) {
-			if ( rsp && 'disabled' in rsp ) {
-				var disabled = rsp.disabled == '1';
-				chrome.contextMenus.update(menuItemId, {"checked": disabled});
-			}
+	function toggleDisabled(cache, host, tab) {
+		cache[host] = !cache[host];
+		disabled[host] = cache[host];
+		chrome.storage.local.set({"disabled": cache}, function() {
+			// console.log('Saved new status into storage.local');
 		});
+
+		// Update label
+		var newLabel = labels[ Number(cache[host]) ];
+		chrome.contextMenus.update(menuItemId, {"title": newLabel});
+
+		// Update tabs, like options.js does & save setting
+		chrome.tabs.sendMessage(tab.id, {"rweb": {"disabled": cache[host]}}, function(rsp) {
+			// console.log('Sent new status to origin tab', tab.url, rsp);
+		});
+	}
+
+	chrome.tabs.onHighlighted.addListener(function(info) {
+		if ( host in disabled ) {
+			updateLabel(disabled, info);
+		}
+		else {
+			chrome.storage.local.get('disabled', function(items) {
+				items.disabled || (items.disabled = {});
+				updateLabel(items.disabled, info);
+			});
+		}
 	});
+
+	function updateLabel(cache, info) {
+		chrome.tabs.get(info.tabIds[0], function(tab) {
+			var host = rweb.host(tab.url);
+
+			// Update label
+			var newLabel = labels[ Number(cache[host]) || 0 ];
+			chrome.contextMenus.update(menuItemId, {"title": newLabel});
+		});
+	}
 }
 catch (ex) {
 	// No permission?
