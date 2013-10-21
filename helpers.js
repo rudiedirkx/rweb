@@ -3,6 +3,7 @@ rweb = {
 	// STORAGE: 'local',
 	// cache: 0,
 	USABLE_ONLINE_STORAGE: .8,
+	CONTENT_CACHE_TTL: 3600,
 
 	uuid: function() {
 		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -97,6 +98,7 @@ rweb = {
 		});
 	},
 	sites: function(host, callback, checkDisabled) {
+console.time('[RWeb] Fetched sites for "' + host + '"');
 		var saved = 0,
 			requireSaves = 2,
 			cbProxy = function() {
@@ -104,7 +106,10 @@ rweb = {
 					// All sites, online & offline have been fetched
 
 					if ( checkDisabled && disabled[host] ) {
-						return console.warn('[RWeb] RWeb was explicitly disabled for this host', host);
+						callback([], true);
+						console.warn('[RWeb] RWeb was explicitly disabled for this host', host);
+console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
+						return;
 					}
 
 					// If this is a query, don't bother sorting, but filter
@@ -125,8 +130,8 @@ rweb = {
 					}
 
 					// rweb.cache++;
-console.log('[RWeb helpers] Fetched sites for "' + host + '"', sites);
-					callback(sites);
+console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
+					callback(sites, false);
 				}
 			},
 			onlineData = '',
@@ -152,7 +157,9 @@ console.log('[RWeb helpers] Fetched sites for "' + host + '"', sites);
 		}
 
 		// Get ONLINE
+// console.time('chrome.storage.sync.get');
 		chrome.storage.sync.get(['chunks', '0', '1', '2', '3'], function(items) {
+// console.timeEnd('chrome.storage.sync.get');
 			if ( items.chunks ) {
 				// Append JSON data
 				var loadMore = [];
@@ -168,7 +175,9 @@ console.log('[RWeb helpers] Fetched sites for "' + host + '"', sites);
 // console.debug('loadMore', loadMore);
 
 				if ( loadMore.length ) {
+// console.time('chrome.storage.sync.get');
 					chrome.storage.sync.get(loadMore, function(items) {
+// console.timeEnd('chrome.storage.sync.get');
 						loadMore.forEach(function(index) {
 							onlineData += items[index];
 						});
@@ -190,7 +199,9 @@ console.log('[RWeb helpers] Fetched sites for "' + host + '"', sites);
 		});
 
 		// Get OFFLINE
+console.time('chrome.storage.local.get');
 		chrome.storage.local.get(['sites', 'disabled'], function(items) {
+console.timeEnd('chrome.storage.local.get');
 			disabled = items.disabled || {};
 // console.debug('offline sites', items.sites);
 			if ( items.sites ) {

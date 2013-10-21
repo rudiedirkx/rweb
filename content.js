@@ -1,24 +1,31 @@
 
 var host = rweb.host(location.host);
-console.log('[RWeb content] Fetching sites for "' + host + '"');
 
-rweb.sites(host, function(sites) {
-	rweb.matched(host, sites);
+if ( !sessionStorage.rwebDisabled || !sessionStorage.rwebExpires || sessionStorage.rwebExpires < Date.now() ) {
+	sessionStorage.rwebExpires = Date.now() + rweb.CONTENT_CACHE_TTL * 1000;
 
-	// Update browser action
-	chrome.runtime.sendMessage({sites: sites, host: host}, function(response) {
-		// I don't care. background.js will have triggered the badge, or not
-	});
+	rweb.sites(host, function(sites, disabled) {
+		rweb.matched(host, sites);
 
-	// Add CSS & JS
-	sites.forEach(function(site) {
-		rweb.css(site);
-		rweb.js(site);
-	});
-}, true);
+		sessionStorage.rwebDisabled = disabled ? '1' : '';
+
+		// Update browser action
+		chrome.runtime.sendMessage({sites: sites, host: host}, function(response) {
+			// I don't care. background.js will have triggered the badge, or not
+		});
+
+		// Add CSS & JS
+		sites.forEach(function(site) {
+			rweb.css(site);
+			rweb.js(site);
+		});
+	}, true);
+}
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if ( msg.rweb && 'disabled' in msg.rweb ) {
+		sessionStorage.rwebDisabled = msg.rweb.disabled ? '1' : '';
+
 		// Immediately update page
 		if ( msg.rweb.disabled ) {
 			// Remove all CSS

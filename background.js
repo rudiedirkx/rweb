@@ -29,42 +29,41 @@ try {
 	});
 
 	function toggleDisabled(cache, host, tab) {
-		cache[host] = !cache[host];
-		disabled[host] = cache[host];
-		chrome.storage.local.set({"disabled": cache}, function() {
+		disabled[host] = !cache[host];
+		chrome.storage.local.set({"disabled": disabled}, function() {
 			// console.log('Saved new status into storage.local');
 		});
 
 		// Update label
-		var newLabel = labels[ Number(cache[host]) ];
+		var newLabel = labels[ Number(disabled[host]) ];
 		chrome.contextMenus.update(menuItemId, {"title": newLabel});
 
 		// Update tabs, like options.js does & save setting
-		chrome.tabs.sendMessage(tab.id, {"rweb": {"disabled": cache[host]}}, function(rsp) {
+		chrome.tabs.sendMessage(tab.id, {"rweb": {"disabled": disabled[host]}}, function(rsp) {
 			// console.log('Sent new status to origin tab', tab.url, rsp);
 		});
 	}
 
 	chrome.tabs.onHighlighted.addListener(function(info) {
-		if ( host in disabled ) {
-			updateLabel(disabled, info);
-		}
-		else {
-			chrome.storage.local.get('disabled', function(items) {
-				items.disabled || (items.disabled = {});
-				updateLabel(items.disabled, info);
-			});
-		}
-	});
-
-	function updateLabel(cache, info) {
 		chrome.tabs.get(info.tabIds[0], function(tab) {
 			var host = rweb.host(tab.url);
 
-			// Update label
-			var newLabel = labels[ Number(cache[host]) || 0 ];
-			chrome.contextMenus.update(menuItemId, {"title": newLabel});
+			if ( host in disabled ) {
+				updateLabel(disabled, host);
+			}
+			else {
+				chrome.storage.local.get('disabled', function(items) {
+					items.disabled || (items.disabled = {});
+					updateLabel(items.disabled, host);
+				});
+			}
 		});
+	});
+
+	function updateLabel(cache, host) {
+		// Update label
+		var newLabel = labels[ Number(cache[host]) || 0 ];
+		chrome.contextMenus.update(menuItemId, {"title": newLabel});
 	}
 }
 catch (ex) {
