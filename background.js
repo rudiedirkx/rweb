@@ -44,21 +44,33 @@ try {
 		});
 	}
 
-	chrome.tabs.onHighlighted.addListener(function(info) {
-		chrome.tabs.get(info.tabIds[0], function(tab) {
-			var host = rweb.host(tab.url);
+	chrome.tabs.onUpdated.addListener(function(tabId, info, tab) {
+// console.log('tabs.onUpdated');
+		if ( info.status && tab.active ) {
+			updateLabelStatus(tab);
+		}
+	});
 
-			if ( host in disabled ) {
-				updateLabel(disabled, host);
-			}
-			else {
-				chrome.storage.local.get('disabled', function(items) {
-					items.disabled || (items.disabled = {});
-					updateLabel(items.disabled, host);
-				});
-			}
+	chrome.tabs.onHighlighted.addListener(function(info) {
+// console.log('tabs.onHighlighted');
+		chrome.tabs.get(info.tabIds[0], function(tab) {
+			updateLabelStatus(tab);
 		});
 	});
+
+	function updateLabelStatus(tab) {
+		var host = rweb.host(tab.url);
+
+		if ( host in disabled ) {
+			updateLabel(disabled, host);
+		}
+		else {
+			chrome.storage.local.get('disabled', function(items) {
+				items.disabled || (items.disabled = {});
+				updateLabel(items.disabled, host);
+			});
+		}
+	}
 
 	function updateLabel(cache, host) {
 		// Update label

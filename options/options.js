@@ -464,11 +464,17 @@ console.log(code);
 				var pct = Math.ceil(100 * bytes / (chrome.storage.local.QUOTA_BYTES));
 				console.log('[RWeb report]', rweb.thousands(bytes), '/', rweb.thousands(chrome.storage.local.QUOTA_BYTES), 'bytes (', pct, '%) offline storage in use');
 			});
-			chrome.storage.local.get('history', function(items) {
+			chrome.storage.local.get(['history', 'disabled'], function(items) {
 				if ( items.history ) {
 					console.log('[RWeb report] Matching history:');
 					$each(items.history, function(num, host) {
 						console.log('[RWeb report]  ', rweb.thousands(num), 'x - ' + host);
+					});
+				}
+				if ( items.disabled ) {
+					console.log('[RWeb report] Disabled on sites:');
+					$each(items.disabled, function(num, host) {
+						console.log('[RWeb report]  ', host);
 					});
 				}
 			});

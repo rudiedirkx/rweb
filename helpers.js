@@ -98,6 +98,7 @@ rweb = {
 		});
 	},
 	sites: function(host, callback, checkDisabled) {
+		host || (host = '');
 console.time('[RWeb] Fetched sites for "' + host + '"');
 		var saved = 0,
 			requireSaves = 2,
@@ -199,9 +200,9 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 		});
 
 		// Get OFFLINE
-console.time('chrome.storage.local.get');
+// console.time('chrome.storage.local.get');
 		chrome.storage.local.get(['sites', 'disabled'], function(items) {
-console.timeEnd('chrome.storage.local.get');
+// console.timeEnd('chrome.storage.local.get');
 			disabled = items.disabled || {};
 // console.debug('offline sites', items.sites);
 			if ( items.sites ) {
