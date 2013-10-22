@@ -52,6 +52,7 @@
 					<input type="button" value="Import" id="btn-import" disabled />
 					&nbsp;
 					<input type="button" value="Stats" id="btn-stats" disabled />
+					<input type="button" value="Disabled" id="btn-disabled" disabled />
 				</td>
 			</tr>
 		</tfoot>
@@ -63,6 +64,12 @@
 <form id="form-import" style="display: none">
 	<textarea rows="6" name="code" id="ta-import">[{"host": "example.com", "css": "body.example.com { background: red; }", "js": "", "enabled": false, "sync": false}]</textarea><br>
 	<input type="submit" value="Import" />
+</form>
+
+<form id="form-disabled" style="display: none">
+	This lists the hosts RWeb is disabled for. You can use the contextmenu on the page or this textarea to change hosts.<br>
+	<textarea rows="6" name="hosts" id="ta-disabled"></textarea><br>
+	<input type="submit" value="Save" />
 </form>
 
 <form id="prefs">

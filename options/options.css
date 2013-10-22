@@ -166,6 +166,7 @@ p[data-notifid].read {
 
 
 #ta-export,
-#ta-import {
+#ta-import,
+#ta-disabled {
 	width: 100%;
 }

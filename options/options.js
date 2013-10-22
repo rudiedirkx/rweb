@@ -91,7 +91,7 @@ Element.extend({
 
 
 
-var $sites, $btnExport, $btnImport, $formImport, $btnStats, $table, $newSite, $prefs;
+var $sites, $btnExport, $btnImport, $formImport, $btnStats, $table, $newSite, $prefs, $btnDisabled;
 
 rweb.ui = {
 	_state: '',
@@ -106,6 +106,7 @@ rweb.ui = {
 		$table = $sites.getFirst();
 		$newSite = $table.getElement('tbody');
 		$prefs = $('prefs');
+		$btnDisabled = $('btn-disabled');
 
 		// BUILD SITES
 		rweb.ui.buildSites(function(sites) {
@@ -457,6 +458,32 @@ console.log(code);
 				setTimeout(function() {
 					$prefs.removeClass('saved');
 				}, 1000);
+			});
+		});
+
+		$btnDisabled.on('click', function(e) {
+			chrome.storage.local.get('disabled', function(items) {
+				var disabled = items.disabled || {},
+					hosts = Object.keys(disabled);
+
+				$('form-disabled').show();
+				$('ta-disabled').setText(hosts.join("\n")).focus();
+			});
+		});
+
+		$('form-disabled').on('submit', function(e) {
+			e.preventDefault();
+
+			var hosts = $('ta-disabled').value.trim();
+			hosts = hosts ? hosts.split("\n") : [];
+
+			var disabled = {};
+			hosts.forEach(function(host) {
+				disabled[host] = true;
+			});
+
+			chrome.storage.local.set({"disabled": disabled}, function() {
+				alert("Hosts saved.\n\nDisabled-states are cached in the site's sessionStorage, so it might take " + rweb.CONTENT_CACHE_TTL + " s to reset.");
 			});
 		});
 	},

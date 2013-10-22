@@ -30,16 +30,22 @@ try {
 
 	function toggleDisabled(cache, host, tab) {
 		disabled[host] = !cache[host];
+		nowDisabled = disabled[host];
+
+		// Save back into storage.local
+		if ( !disabled[host] ) {
+			delete disabled[host];
+		}
 		chrome.storage.local.set({"disabled": disabled}, function() {
 			// console.log('Saved new status into storage.local');
 		});
 
 		// Update label
-		var newLabel = labels[ Number(disabled[host]) ];
+		var newLabel = labels[ Number(nowDisabled) ];
 		chrome.contextMenus.update(menuItemId, {"title": newLabel});
 
 		// Update tabs, like options.js does & save setting
-		chrome.tabs.sendMessage(tab.id, {"rweb": {"disabled": disabled[host]}}, function(rsp) {
+		chrome.tabs.sendMessage(tab.id, {"rweb": {"disabled": nowDisabled}}, function(rsp) {
 			// console.log('Sent new status to origin tab', tab.url, rsp);
 		});
 	}
