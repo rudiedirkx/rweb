@@ -1,6 +1,7 @@
 {
-	"name": "R Web",
-	"description": "R Web",
+	"name": "RWeb",
+	"short_name": "short_name",
+	"description": "Simple tool for customizing websites by adding your own CSS & JS.",
 
 	"permissions": [ "storage", "tabs", "contextMenus" ],
 
