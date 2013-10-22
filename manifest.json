@@ -2,8 +2,7 @@
 	"name": "R Web",
 	"description": "R Web",
 
-	"permissions": [ "storage" ],
-	"optional_permissions": [ "tabs", "contextMenus" ],
+	"permissions": [ "storage", "tabs", "contextMenus" ],
 
 	"options_page": "options/options.html",
 	"content_scripts": [

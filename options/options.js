@@ -174,39 +174,6 @@ rweb.ui = {
 		rweb.ui.getPrefs(function(items) {
 			$prefs.setNamedElementValues(items, true);
 		});
-
-		// SHOW OPTIONAL PERMISSIONS
-		rweb.ui.updateOptionalPermissions();
-	},
-	updateOptionalPermissions: function(callback) {
-		var $perms = $$('#permissions li[data-permission]');
-
-		// Cycle through optional permissions to update status and show buttons
-		$perms.each(function($li) {
-			if ( !$li.getElement('.grant') ) {
-				$li.innerHTML += ' <a href class="grant">GRANT</a> <a href class="revoke">REVOKE</a>';
-			}
-
-			var perm = $li.dataset.permission;
-			chrome.permissions.contains({permissions: [perm]}, function(has) {
-				var method = has ? 'addClass' : 'removeClass';
-				$li[method]('has');
-			});
-		});
-
-		// Attach listeners to buttons to toggle permission
-		$('permissions').on('click', '.grant, .revoke', function(e) {
-			e.preventDefault();
-
-			var $li = this.firstAncestor('[data-permission]'),
-				perm = $li.dataset.permission,
-				has = $li.hasClass('has'),
-				method = has ? 'remove' : 'request';
-			chrome.permissions[method]({permissions: [perm]}, function(done) {
-				// Can't interpret new status, so just update visuals
-				rweb.ui.updateOptionalPermissions();
-			});
-		});
 	},
 	getPrefs: function(callback) {
 		var prefs = $prefs.getNamedElementValues();
@@ -494,19 +461,8 @@ console.log(code);
 		});
 	},
 	propagateNewCSS: function(updatedHosts) {
-		var permission = null;
 		chrome.tabs.query({active: false}, function(tabs) {
 			tabs.forEach(function(tab) {
-				if ( !tab.url ) {
-					if ( permission === null ) {
-						console.warn('[RWeb options] Could not propagate updated CSS to', updatedHosts, '. Check optional permissions.');
-						permission = false;
-					}
-					return;
-				}
-
-				permission = true;
-
 				var a = document.createElement('a');
 				a.href = tab.url;
 				var host = rweb.host(a.host);
@@ -517,9 +473,9 @@ console.log(code);
 					matches.forEach(function(site) {
 						css += site.css.trim() + "\n\n";
 					});
-					console.debug('[RWeb options] Propagating new CSS to', host);
+					console.time('[RWeb] Propagated new CSS to "' + host + '"');
 					chrome.tabs.sendMessage(tab.id, {cssUpdate: css}, function(rsp) {
-						console.debug('[RWeb options] Propagated new CSS to', host, rsp);
+						console.timeEnd('[RWeb] Propagated new CSS to "' + host + '"');
 					});
 				}
 			});
@@ -563,6 +519,24 @@ document.body.onload = function() {
 
 	// Init
 	rweb.ui.init();
+
+	// Hide notifications
+	var notifidsRead = (localStorage.notifidsRead || '').split(' ');
+	$$('p[data-notifid]').each(function(el) {
+		var id = el.data('notifid');
+		if ( notifidsRead.contains(id) ) {
+			el.addClass('read');
+		}
+		else {
+			el.append(document.createTextNode(' '));
+			el.append(document.el('a').attr('href', '').setText('Got it!').on('click', function(e) {
+				e.preventDefault();
+				notifidsRead.push(id);
+				localStorage.notifidsRead = notifidsRead.join(' ').trim();
+				el.addClass('read');
+			}));
+		}
+	});
 
 	// Apply local styling
 	rweb.sites('::', function(sites) {

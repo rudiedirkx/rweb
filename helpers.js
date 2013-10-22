@@ -3,7 +3,7 @@ rweb = {
 	// STORAGE: 'local',
 	// cache: 0,
 	USABLE_ONLINE_STORAGE: .8,
-	CONTENT_CACHE_TTL: 3600,
+	CONTENT_CACHE_TTL: 120, // 2 min, too short to be useful, but not too long
 
 	uuid: function() {
 		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

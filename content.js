@@ -2,17 +2,15 @@
 var host = rweb.host(location.host);
 
 if ( !sessionStorage.rwebDisabled || !sessionStorage.rwebExpires || sessionStorage.rwebExpires < Date.now() ) {
-	sessionStorage.rwebExpires = Date.now() + rweb.CONTENT_CACHE_TTL * 1000;
-
 	rweb.sites(host, function(sites, disabled) {
+		// Save local stats
 		rweb.matched(host, sites);
 
-		sessionStorage.rwebDisabled = disabled ? '1' : '';
+		// Update sessionStorage
+		disabled ? rwebDisable() : rwebEnable();
 
 		// Update browser action
-		chrome.runtime.sendMessage({sites: sites, host: host}, function(response) {
-			// I don't care. background.js will have triggered the badge, or not
-		});
+		chrome.runtime.sendMessage({sites: sites, host: host});
 
 		// Add CSS & JS
 		sites.forEach(function(site) {
@@ -24,30 +22,31 @@ if ( !sessionStorage.rwebDisabled || !sessionStorage.rwebExpires || sessionStora
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if ( msg.rweb && 'disabled' in msg.rweb ) {
-		sessionStorage.rwebDisabled = msg.rweb.disabled ? '1' : '';
-
 		// Immediately update page
 		if ( msg.rweb.disabled ) {
+			rwebDisable();
+
 			// Remove all CSS
 			doCSSUpdate('');
 		}
 		else {
-			// Fetch live CSS
-			rweb.sites(host, function(sites) {
-				rweb.matched(host, sites);
-
-				var css = '';
-				sites.forEach(function(site) {
-					css += site.css.trim() + "\n\n";
-				});
-				doCSSUpdate(css);
-			});
+			rwebEnable();
 		}
 	}
 });
 
+function rwebDisable() {
+	sessionStorage.rwebDisabled = 1;
+	sessionStorage.rwebExpires = Date.now() + rweb.CONTENT_CACHE_TTL * 1000;
+}
+
+function rwebEnable() {
+	delete sessionStorage.rwebDisabled;
+	delete sessionStorage.rwebExpires;
+}
+
 function doCSSUpdate(css) {
-	console.debug('[RWeb content] Updating CSS:', rweb.thousands(css.length) + ' bytes');
+	console.debug('[RWeb] Updating CSS:', rweb.thousands(css.length) + ' bytes');
 
 	// Delete all existing style[data-origin="rweb"]
 	[].forEach.call(document.querySelectorAll('style[data-origin="rweb"]'), function(el) {

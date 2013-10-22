@@ -2,8 +2,8 @@
 try {
 	var disabled = {}, // local cache, just for speed
 		labels = [
-			'Disable indefinitely for this website',
-			'DISABLED - Enable for this website',
+			'Disable RWeb indefinitely',
+			'DISABLED - Re-enable',
 		];
 
 	var menuItemId = chrome.contextMenus.create({
@@ -99,7 +99,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 	});
 });
 
-chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(function(msg, sender) {
 	if ( msg && msg.sites && msg.sites.length ) {
 		chrome.browserAction.getBadgeText({tabId: sender.tab.id}, function(text) {
 			var num = (parseFloat(text) || 0) + msg.sites.length;
@@ -108,6 +108,7 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 				tabId: sender.tab.id
 			});
 		});
+
 		chrome.browserAction.setBadgeBackgroundColor({
 			color: '#000',
 			tabId: sender.tab.id
