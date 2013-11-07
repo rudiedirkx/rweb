@@ -51,8 +51,11 @@
 					<input type="button" value="Export" id="btn-export" disabled />
 					<input type="button" value="Import" id="btn-import" disabled />
 					&nbsp;
-					<input type="button" value="Stats" id="btn-stats" disabled />
-					<input type="button" value="Disabled" id="btn-disabled" disabled />
+					<input type="button" value="Stats" id="btn-stats" disabled title="Prints of a bunch of (mostly local) stats to the Console." />
+					<input type="button" value="Disabled" id="btn-disabled" disabled title="Edit your disabled sites. Might induce a disabled-state delay on the relevant website." />
+					<input type="button" value="Re-cache" id="btn-recache" disabled title="On the front-end RWeb uses quick-cache only. This means data is not loaded live, meaning you might have to manually re-cache.
+
+I can't force a download/sync! That's up to Chrome alone. If you don't see your site in the above table, wait some more and reload this page." />
 				</td>
 			</tr>
 		</tfoot>

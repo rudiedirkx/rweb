@@ -143,6 +143,16 @@ p[data-notifid].read {
 	width: 100%;
 	display: block;
 	tab-size: 4;
+	resize: vertical;
+}
+
+
+
+#btn-recache.behind {
+	background-color: #d00;
+	color: white;
+	font-weight: bold;
+	text-transform: uppercase;
 }
 
 

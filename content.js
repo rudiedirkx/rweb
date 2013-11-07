@@ -1,6 +1,8 @@
 
 var host = rweb.host(location.host);
 
+// USE CACHE INSTEAD //
+
 if ( !sessionStorage.rwebDisabled || !sessionStorage.rwebExpires || sessionStorage.rwebExpires < Date.now() ) {
 	rweb.sites(host, function(sites, disabled) {
 		// Save local stats

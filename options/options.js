@@ -91,7 +91,7 @@ Element.extend({
 
 
 
-var $sites, $btnExport, $btnImport, $formImport, $btnStats, $table, $newSite, $prefs, $btnDisabled;
+var $sites, $table, $newSite, $prefs;
 
 rweb.ui = {
 	_state: '',
@@ -99,14 +99,9 @@ rweb.ui = {
 	init: function() {
 		// Elements
 		$sites = $('sites');
-		$btnExport = $('btn-export');
-		$btnImport = $('btn-import');
-		$formImport = $('form-import');
-		$btnStats = $('btn-stats');
 		$table = $sites.getFirst();
 		$newSite = $table.getElement('tbody');
 		$prefs = $('prefs');
-		$btnDisabled = $('btn-disabled');
 
 		// BUILD SITES
 		rweb.ui.buildSites(function(sites) {
@@ -285,6 +280,8 @@ rweb.ui = {
 				rweb.ui._state = JSON.encode(settings);
 
 				rweb.saveSites(settings, function() {
+					rweb.recache();
+
 					// clean/dirty => saved
 					$sites.removeClass('dirty').addClass('saved');
 
@@ -346,7 +343,7 @@ rweb.ui = {
 
 		$sites.getElements('.checkboxify').toggleCheckboxify();
 
-		$btnExport.on('click', function(e) {
+		$('btn-export').on('click', function(e) {
 			$('form-import').hide();
 
 			var settings = rweb.ui.settings(false);
@@ -358,14 +355,14 @@ rweb.ui = {
 			ta.selectionEnd = ta.value.length;
 		});
 
-		$btnImport.on('click', function(e) {
+		$('btn-import').on('click', function(e) {
 			$('ta-export').hide();
 
 			$('form-import').show();
 			$('ta-import').focus();
 		});
 
-		$formImport.on('submit', function(e) {
+		$('form-import').on('submit', function(e) {
 			e.preventDefault();
 
 			// Parse import
@@ -401,7 +398,9 @@ console.log(code);
 								existingSitesList.push(site);
 							});
 							rweb.saveSites(existingSitesList, function() {
-								location.reload();
+								rweb.recache(function() {
+									location.reload();
+								});
 							});
 						}
 					});
@@ -411,7 +410,7 @@ console.log(code);
 			return alert('Not an array of sites');
 		});
 
-		$btnStats.on('click', function(e) {
+		$('btn-stats').on('click', function(e) {
 			rweb.sites(null, function(sites) {
 				var online = 0, offline = 0;
 				sites.forEach(function(site) {
@@ -446,6 +445,20 @@ console.log(code);
 					});
 				}
 			});
+
+			chrome.storage.sync.get(null, function(items) {
+				console.log('[RWeb report] Synced keys:');
+				console.log("[RWeb report]   '" + Object.keys(items).join("', '") + "'");
+			});
+			chrome.storage.local.get(null, function(items) {
+				console.log('[RWeb report] Local keys:');
+				console.log("[RWeb report]   '" + Object.keys(items).join("', '") + "'");
+			});
+
+			chrome.storage.local.get(['lastDownSync', 'lastReCache'], function(items) {
+				console.log('[RWeb report] Last downsync: ' + ( items.lastDownSync ? new Date(items.lastDownSync) : '-' ));
+				console.log('[RWeb report] Last re-cache: ' + ( items.lastReCache ? new Date(items.lastReCache) : '-' ));
+			});
 		});
 
 		$prefs.on('submit', function(e) {
@@ -461,7 +474,7 @@ console.log(code);
 			});
 		});
 
-		$btnDisabled.on('click', function(e) {
+		$('btn-disabled').on('click', function(e) {
 			chrome.storage.local.get('disabled', function(items) {
 				var disabled = items.disabled || {},
 					hosts = Object.keys(disabled);
@@ -485,6 +498,23 @@ console.log(code);
 			chrome.storage.local.set({"disabled": disabled}, function() {
 				alert("Hosts saved.\n\nDisabled-states are cached in the site's sessionStorage, so it might take " + rweb.CONTENT_CACHE_TTL + " s to reset.");
 			});
+		});
+
+		$('btn-recache').on('click', function(e) {
+			rweb.recache(function() {
+				location.reload();
+			});
+		});
+
+		chrome.storage.local.get(['lastDownSync', 'lastReCache'], function(items) {
+			setTimeout(function() {
+				var sites = rweb.ui.settings();
+				if ( sites.length ) {
+					if ( !items.lastReCache || items.lastReCache < items.lastDownSync-5000 ) {
+						$('btn-recache').addClass('behind');
+					}
+				}
+			}, 500);
 		});
 	},
 	propagateNewCSS: function(updatedHosts) {

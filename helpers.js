@@ -272,6 +272,50 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 		}
 
 		return String(Math.round(num)).split('').reverse().join('').match(/.{1,3}/g).join(',').split('').reverse().join('');
+	},
+	recache: function(callback) {
+console.time('[RWeb] Re-cached all sites into local');
+		chrome.storage.local.get(null, function(items) {
+			var cidPrefix = 'cache__';
+			var remove = {};
+			$each(items, function(val, key) {
+				if ( key.indexOf(cidPrefix) === 0 ) {
+					remove[key] = 1;
+				}
+			});
+// console.debug('remove', remove);
+
+			var cache = {};
+			rweb.sites(null, function(sites) {
+				$each(sites, function(site) {
+					if ( site.enabled ) {
+						site.host.split(',').forEach(function(host) {
+							var cid = cidPrefix + host;
+							cache[cid] || (cache[cid] = {js: '', css: ''});
+
+							cache[cid].css = (cache[cid].css + "\n\n" + site.css.trim()).trim();
+							cache[cid].js = (cache[cid].js + "\n\n" + site.js.trim()).trim();
+
+							delete remove[cid];
+						});
+					}
+				});
+// console.debug('cache', cache);
+// console.debug('remove', remove);
+
+				var todo = 2,
+					done = function() {
+						if ( --todo == 0 ) {
+console.timeEnd('[RWeb] Re-cached all sites into local');
+							callback && callback();
+						}
+					};
+
+				chrome.storage.local.remove(Object.keys(remove), done);
+				cache['lastReCache'] = Date.now();
+				chrome.storage.local.set(cache, done);
+			});
+		});
 	}
 };
 
