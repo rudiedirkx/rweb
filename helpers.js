@@ -1,9 +1,7 @@
 
 rweb = {
-	// STORAGE: 'local',
-	// cache: 0,
 	USABLE_ONLINE_STORAGE: .8,
-	CONTENT_CACHE_TTL: 120, // 2 min, too short to be useful, but not too long
+	CONTENT_CACHE_TTL: 300,
 
 	uuid: function() {
 		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -27,11 +25,11 @@ rweb = {
 		});
 	},
 
-	matched: function(host, sites, callback) {
-		if ( sites && sites.length ) {
+	matched: function(host, site, callback) {
+		if ( site ) {
 			chrome.storage.local.get('history', function(items) {
 				var history = items.history || {};
-				history[host] = (history[host] || 0) + sites.length;
+				history[host] = (history[host] || 0) + 1;
 				chrome.storage.local.set({history: history}, function() {
 					callback && callback();
 				});
@@ -97,6 +95,23 @@ rweb = {
 			return ( !enabled || site.enabled ) && site.host.split(',').indexOf(host) != -1;
 		});
 	},
+	cached: function(host, callback, checkDisabled) {
+		host || (host = '');
+console.time('[RWeb] Fetched (cached) sites for "' + host + '"');
+		var key = 'cache__' + host;
+		chrome.storage.local.get([key, 'disabled'], function(items) {
+			if ( items.disabled && items.disabled[host] ) {
+				callback(null, true);
+				console.warn('[RWeb] RWeb was explicitly disabled for "' + host + '". I\'ll check again in ' + rweb.CONTENT_CACHE_TTL + ' seconds.');
+console.timeEnd('[RWeb] Fetched (cached) sites for "' + host + '"');
+				return;
+			}
+
+			var site = items[key] || false;
+console.timeEnd('[RWeb] Fetched (cached) sites for "' + host + '"');
+			callback(site, false);
+		});
+	},
 	sites: function(host, callback, checkDisabled) {
 		host || (host = '');
 console.time('[RWeb] Fetched sites for "' + host + '"');
@@ -130,7 +145,6 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 						});
 					}
 
-					// rweb.cache++;
 console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 					callback(sites, false);
 				}

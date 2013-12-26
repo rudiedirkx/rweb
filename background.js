@@ -106,9 +106,9 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 });
 
 chrome.runtime.onMessage.addListener(function(msg, sender) {
-	if ( msg && msg.sites && msg.sites.length ) {
+	if ( msg && msg.site ) {
 		chrome.browserAction.getBadgeText({tabId: sender.tab.id}, function(text) {
-			var num = (parseFloat(text) || 0) + msg.sites.length;
+			var num = (parseFloat(text) || 0) + 1;
 			chrome.browserAction.setBadgeText({
 				text: String(num),
 				tabId: sender.tab.id

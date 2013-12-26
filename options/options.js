@@ -20,7 +20,7 @@
  * [ ] ? Implement Select0r
  */
 
-console.time('UI loaded');
+console.time('[RWeb] UI loaded');
 
 Element.extend({
 	setNamedElementValues: function(values, initial) {
@@ -163,7 +163,7 @@ rweb.ui = {
 
 			$$('tfoot input:not([data-disabled])').attr('disabled', null);
 
-			console.timeEnd('UI loaded');
+			console.timeEnd('[RWeb] UI loaded');
 		});
 
 		// SHOW PREFERENCES

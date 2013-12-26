@@ -1,24 +1,26 @@
 
 var host = rweb.host(location.host);
 
-// USE CACHE INSTEAD //
+// First check sessionStorage for disablability
+// Then check local cache for specific host
+// And (re)set disablability
 
 if ( !sessionStorage.rwebDisabled || !sessionStorage.rwebExpires || sessionStorage.rwebExpires < Date.now() ) {
-	rweb.sites(host, function(sites, disabled) {
+	rweb.cached(host, function(site, disabled) {
 		// Save local stats
-		rweb.matched(host, sites);
+		rweb.matched(host, site);
 
 		// Update sessionStorage
 		disabled ? rwebDisable() : rwebEnable();
 
 		// Update browser action
-		chrome.runtime.sendMessage({sites: sites, host: host});
+		chrome.runtime.sendMessage({site: site, host: host});
 
 		// Add CSS & JS
-		sites.forEach(function(site) {
+		if ( site ) {
 			rweb.css(site);
 			rweb.js(site);
-		});
+		}
 	}, true);
 }
 
