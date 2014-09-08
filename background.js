@@ -16,28 +16,24 @@ try {
 
 			var host = rweb.host(tab.url);
 
-			if ( host in disabled ) {
+			console.time('get & save disabled');
+			chrome.storage.local.get('disabled', function(items) {
+				var disabled = items.disabled || {};
 				toggleDisabled(disabled, host, tab);
-			}
-			else {
-				chrome.storage.local.get('disabled', function(items) {
-					items.disabled || (items.disabled = {});
-					toggleDisabled(items.disabled, host, tab);
-				});
-			}
+			});
 		}
 	});
 
 	function toggleDisabled(cache, host, tab) {
-		disabled[host] = !cache[host];
-		nowDisabled = disabled[host];
+		cache[host] = !cache[host];
+		nowDisabled = cache[host];
 
 		// Save back into storage.local
-		if ( !disabled[host] ) {
-			delete disabled[host];
+		if ( !cache[host] ) {
+			delete cache[host];
 		}
-		chrome.storage.local.set({"disabled": disabled}, function() {
-			// console.log('Saved new status into storage.local');
+		chrome.storage.local.set({"disabled": cache}, function() {
+			console.timeEnd('get & save disabled');
 		});
 
 		// Update label
@@ -67,27 +63,22 @@ try {
 	function updateLabelStatus(tab) {
 		var host = rweb.host(tab.url);
 
-		if ( host in disabled ) {
-			updateLabel(disabled, host);
-		}
-		else {
-			chrome.storage.local.get('disabled', function(items) {
-				items.disabled || (items.disabled = {});
-				updateLabel(items.disabled, host);
-			});
-		}
+		chrome.storage.local.get('disabled', function(items) {
+			var disabled = items.disabled || {};
+			updateLabel(host in disabled, host);
+		});
 	}
 
-	function updateLabel(cache, host) {
+	function updateLabel(disabled, host) {
 		// Update label
-		var newLabel = labels[ Number(cache[host]) || 0 ];
+		var newLabel = labels[ Number(disabled) ];
 		chrome.contextMenus.update(menuItemId, {"title": newLabel});
 	}
 }
 catch (ex) {
 	// No permission?
 	// DEBUG //
-	// throw ex;
+	throw ex;
 	// DEBUG //
 }
 
