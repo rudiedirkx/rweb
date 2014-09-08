@@ -119,7 +119,8 @@ chrome.storage.onChanged.addListener(function(changes, area) {
 
 		chrome.storage.local.set({"lastDownSync": Date.now()});
 
-		// alert('[background] chrome.storage.onChanged: ' + area);
-		// alert(JSON.stringify(Object.keys(changes)));
+		rweb.recache(function() {
+			location.reload();
+		});
 	}
 });
