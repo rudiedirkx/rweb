@@ -256,7 +256,7 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 			el.dataset.origin = 'rweb';
 			el.textContent = site.css;
 
-			attachTo.appendChild(el);
+			rweb.insert(attachTo, el);
 		}
 	},
 	js: function(site) {
@@ -273,9 +273,18 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 
 			el.textContent = js;
 
+			rweb.insert(attachTo, el);
+		}
+	},
+	insert: function(attachTo, el) {
+		if ( attachTo.firstElementChild ) {
+			attachTo.insertBefore(el, attachTo.firstElementChild);
+		}
+		else {
 			attachTo.appendChild(el);
 		}
 	},
+
 	thousands: function(num, nokilo) {
 		if ( !nokilo && num > 5000 ) {
 			return rweb.thousands(num/1000, true) + ' k';
