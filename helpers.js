@@ -99,9 +99,14 @@ rweb = {
 		host || (host = '');
 console.time('[RWeb] Fetched (cached) sites for "' + host + '"');
 		var key = 'cache__' + host;
-		chrome.storage.local.get([key, 'disabled', 'extendNodeList'], function(items) {
+		chrome.storage.local.get([key, 'disabled', 'extendNodeList', 'alwaysOutline'], function(items) {
+			var options = {
+				extendNodeList: parseFloat(items.extendNodeList),
+				alwaysOutline: parseFloat(items.alwaysOutline),
+			};
+
 			if ( items.disabled && items.disabled[host] ) {
-				callback(null, true);
+				callback(null, true, options);
 				console.warn('[RWeb] RWeb was explicitly disabled for "' + host + '". I\'ll check again in ' + rweb.CONTENT_CACHE_TTL + ' seconds.');
 console.timeEnd('[RWeb] Fetched (cached) sites for "' + host + '"');
 				return;
@@ -109,9 +114,7 @@ console.timeEnd('[RWeb] Fetched (cached) sites for "' + host + '"');
 
 			var site = items[key] || false;
 console.timeEnd('[RWeb] Fetched (cached) sites for "' + host + '"');
-			callback(site, false, {
-				extendNodeList: parseFloat(items.extendNodeList),
-			});
+			callback(site, false, options);
 		});
 	},
 	sites: function(host, callback, checkDisabled) {
@@ -251,12 +254,17 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 		});
 	},
 
-	css: function(site) {
+	css: function(site, options) {
 		var attachTo = document.head || document.body || document.documentElement;
-		if ( site.css && attachTo ) {
+		if ( attachTo ) {
+			var css = site.css.trim();
+			if ( options.alwaysOutline ) {
+				css += "\n\n:focus { outline: -webkit-focus-ring-color auto 5px !important; }";
+			}
+
 			var el = document.createElement('style');
 			el.dataset.origin = 'rweb';
-			el.textContent = site.css;
+			el.textContent = css.trim();
 
 			rweb.insert(attachTo, el);
 		}

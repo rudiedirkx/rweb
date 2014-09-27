@@ -7,6 +7,8 @@ var host = rweb.host(location.host);
 
 if ( !sessionStorage.rwebDisabled || !sessionStorage.rwebExpires || sessionStorage.rwebExpires < Date.now() ) {
 	rweb.cached(host, function(site, disabled, options) {
+		options.alwaysOutline = options.alwaysOutline == 2 || (site && options.alwaysOutline == 1);
+
 		// Save local stats
 		rweb.matched(host, site);
 
@@ -18,8 +20,11 @@ if ( !sessionStorage.rwebDisabled || !sessionStorage.rwebExpires || sessionStora
 
 		// Add CSS & JS
 		if ( site ) {
-			rweb.css(site);
+			rweb.css(site, options);
 			rweb.js(site, options);
+		}
+		else if ( options.alwaysOutline ) {
+			rweb.css({css: ''}, options);
 		}
 	}, true);
 }
@@ -52,13 +57,17 @@ function rwebEnable() {
 function doCSSUpdate(css) {
 	console.debug('[RWeb] Updating CSS:', rweb.thousands(css.length) + ' bytes');
 
-	// Delete all existing style[data-origin="rweb"]
-	[].forEach.call(document.querySelectorAll('style[data-origin="rweb"]'), function(el) {
-		el.remove();
-	});
+	chrome.storage.local.get('alwaysOutline', function(options) {
+		options.alwaysOutline = parseFloat(options.alwaysOutline);
 
-	// Create 1 new style[data-origin="rweb"]
-	rweb.css({css: css});
+		// Delete all existing style[data-origin="rweb"]
+		[].forEach.call(document.querySelectorAll('style[data-origin="rweb"]'), function(el) {
+			el.remove();
+		});
+
+		// Create 1 new style[data-origin="rweb"]
+		rweb.css({css: css}, options);
+	});
 }
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {

@@ -66,4 +66,17 @@ rweb.updates = [
 		});
 	},
 
+
+
+	/**
+	 * Set default for local option `alwaysOutline`
+	 */
+
+	function(next) {
+		var prefs = {alwaysOutline: "0"};
+		chrome.storage.local.set(prefs, function() {
+			next();
+		});
+	},
+
 ];
