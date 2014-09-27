@@ -518,23 +518,26 @@ console.log(code);
 		});
 	},
 	propagateNewCSS: function(updatedHosts) {
-		chrome.tabs.query({active: false}, function(tabs) {
-			tabs.forEach(function(tab) {
-				var a = document.createElement('a');
-				a.href = tab.url;
-				var host = rweb.host(a.host);
-				if ( rweb.hostMatch(updatedHosts, host) ) {
-					var sites = sites = rweb.ui.settings(),
-						matches = rweb.hostFilter(sites, host),
-						css = '';
-					matches.forEach(function(site) {
-						css += site.css.trim() + "\n\n";
-					});
-					console.time('[RWeb] Propagated new CSS to "' + host + '"');
-					chrome.tabs.sendMessage(tab.id, {cssUpdate: css}, function(rsp) {
-						console.timeEnd('[RWeb] Propagated new CSS to "' + host + '"');
-					});
-				}
+		chrome.storage.local.get(['disabled'], function(items) {
+			var disabled = items.disabled || {};
+			chrome.tabs.query({active: false}, function(tabs) {
+				tabs.forEach(function(tab) {
+					var a = document.createElement('a');
+					a.href = tab.url;
+					var host = rweb.host(a.host);
+					if ( !disabled[host] && rweb.hostMatch(updatedHosts, host) ) {
+						var sites = sites = rweb.ui.settings(),
+							matches = rweb.hostFilter(sites, host),
+							css = '';
+						matches.forEach(function(site) {
+							css += site.css.trim() + "\n\n";
+						});
+						console.time('[RWeb] Propagated new CSS to "' + host + '"');
+						chrome.tabs.sendMessage(tab.id, {cssUpdate: css}, function(rsp) {
+							console.timeEnd('[RWeb] Propagated new CSS to "' + host + '"');
+						});
+					}
+				});
 			});
 		});
 	}
