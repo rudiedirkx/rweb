@@ -466,7 +466,7 @@ console.log(code);
 
 			var prefs = this.getNamedElementValues(true);
 
-			chrome.storage.local.set(prefs, function(items) {
+			chrome.storage.local.set(prefs, function() {
 				$prefs.addClass('saved');
 				setTimeout(function() {
 					$prefs.removeClass('saved');

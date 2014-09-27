@@ -165,6 +165,9 @@ p[data-notifid].read {
 #prefs p {
 	margin: 0;
 }
+#prefs .pref {
+	display: inline-block;
+}
 #prefs .saved {
 	color: green;
 	margin-left: 10px;

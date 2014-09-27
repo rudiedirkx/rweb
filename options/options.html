@@ -77,8 +77,18 @@ I can't force a download/sync! That's up to Chrome alone. If you don't see your 
 
 <form id="prefs">
 	<p>
-		onBrowserActionClick: <select name="onBrowserActionClick"><option value="">Open options<option value="hilite">Open options & hilite site<option value="open">Open options & open site</select>
-		Auto indent: <select name="autoIndent"><option value="">No<option value="%09">Yes, tabs<option value="%20%20">Yes, 2 spaces<option value="%20%20%20%20">Yes, 4 spaces</select>
+		<span class="pref">
+			onBrowserActionClick:
+			<select name="onBrowserActionClick"><option value="">Open options</option><option value="hilite">Open options & hilite site</option><option value="open">Open options & open site</option></select>
+		</span>
+		<span class="pref">
+			Auto indent:
+			<select name="autoIndent"><option value="">No</option><option value="%09">Yes, tabs</option><option value="%20%20">Yes, 2 spaces</option><option value="%20%20%20%20">Yes, 4 spaces</option></select>
+		</span>
+		<span class="pref">
+			Extend <code>NodeList</code>:
+			<select name="extendNodeList"><option value="0">No</option><option value="1">Yes</option></select>
+		</span>
 		<input type="submit" value="Save" />
 		<span class="saved">Saved!</span>
 	</p>

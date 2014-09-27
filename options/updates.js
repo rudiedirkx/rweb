@@ -53,4 +53,17 @@ rweb.updates = [
 		});
 	},
 
+
+
+	/**
+	 * Set default for local option `extendNodeList`
+	 */
+
+	function(next) {
+		var prefs = {extendNodeList: "0"};
+		chrome.storage.local.set(prefs, function() {
+			next();
+		});
+	},
+
 ];

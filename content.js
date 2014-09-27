@@ -6,7 +6,7 @@ var host = rweb.host(location.host);
 // And (re)set disablability
 
 if ( !sessionStorage.rwebDisabled || !sessionStorage.rwebExpires || sessionStorage.rwebExpires < Date.now() ) {
-	rweb.cached(host, function(site, disabled) {
+	rweb.cached(host, function(site, disabled, options) {
 		// Save local stats
 		rweb.matched(host, site);
 
@@ -19,7 +19,7 @@ if ( !sessionStorage.rwebDisabled || !sessionStorage.rwebExpires || sessionStora
 		// Add CSS & JS
 		if ( site ) {
 			rweb.css(site);
-			rweb.js(site);
+			rweb.js(site, options);
 		}
 	}, true);
 }

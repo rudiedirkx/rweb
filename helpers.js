@@ -99,7 +99,7 @@ rweb = {
 		host || (host = '');
 console.time('[RWeb] Fetched (cached) sites for "' + host + '"');
 		var key = 'cache__' + host;
-		chrome.storage.local.get([key, 'disabled'], function(items) {
+		chrome.storage.local.get([key, 'disabled', 'extendNodeList'], function(items) {
 			if ( items.disabled && items.disabled[host] ) {
 				callback(null, true);
 				console.warn('[RWeb] RWeb was explicitly disabled for "' + host + '". I\'ll check again in ' + rweb.CONTENT_CACHE_TTL + ' seconds.');
@@ -109,7 +109,9 @@ console.timeEnd('[RWeb] Fetched (cached) sites for "' + host + '"');
 
 			var site = items[key] || false;
 console.timeEnd('[RWeb] Fetched (cached) sites for "' + host + '"');
-			callback(site, false);
+			callback(site, false, {
+				extendNodeList: parseFloat(items.extendNodeList),
+			});
 		});
 	},
 	sites: function(host, callback, checkDisabled) {
@@ -259,13 +261,16 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 			rweb.insert(attachTo, el);
 		}
 	},
-	js: function(site) {
+	js: function(site, options) {
 		var attachTo = document.head || document.body || document.documentElement;
 		if ( site.js && attachTo && location.protocol != 'chrome-extension:' ) {
 			var el = document.createElement('script');
 			el.dataset.origin = 'rweb';
 
 			var js = '(function() {';
+			if ( options.extendNodeList ) {
+				js += "['forEach', 'slice', 'filter', 'map', 'indexOf'].forEach(function(method) { NodeList.prototype[method] = Array.prototype[method]; });";
+			}
 			js += "var ready = function(cb) { document.readyState == 'interactive' ? cb() : document.addEventListener('DOMContentLoaded', cb); }\n";
 			js += "var load = function(cb) { document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true); }\n";
 			js += site.js;
