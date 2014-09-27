@@ -25,6 +25,11 @@ function doAutoIndent(textarea, indent) {
 	}
 
 	function removeIndent(ta, before, after) {
+		var remove = before.slice(before.length - 1 - indent.length, before.length - 1);
+		if ( remove != indent ) {
+			return;
+		}
+
 		ta._lastValue = ta.value = before.slice(0, -1-indent.length) + '}' + after;
 		ta.selectionStart = ta.selectionEnd = before.length - indent.length;
 	}
