@@ -277,7 +277,7 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 
 			var js = '(function() {';
 			if ( options.extendNodeList ) {
-				js += "['forEach', 'slice', 'filter', 'map', 'indexOf'].forEach(function(method) { NodeList.prototype[method] = Array.prototype[method]; });";
+				js += "['forEach', 'slice', 'filter', 'map', 'indexOf'].forEach(function(method) { HTMLCollection.prototype[method] = NodeList.prototype[method] = Array.prototype[method]; });";
 			}
 			js += "var ready = function(cb) { document.readyState == 'interactive' ? cb() : document.addEventListener('DOMContentLoaded', cb); }\n";
 			js += "var load = function(cb) { document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true); }\n";
