@@ -119,40 +119,30 @@ rweb.ui = {
 
 			// Select existing or new site
 			if ( location.hash.length > 1 ) {
+				var host = rweb.host(location.hash.substr(1));
+
+				// Hilite ass matching sites
+				$$('.el-host').each(function(el) {
+					if (rweb.hostMatch(el.value, host)) {
+						el.firstAncestor('tbody').addClass('hilited');
+					}
+				});
+
+				var $openSite = $('tbody.hilited', true);
+
+				// Maybe open the first
 				rweb.onBrowserActionClick(function(action) {
-					if ( action ) {
-						var host = location.hash.substr(1),
-							matchingSites = rweb.hostFilter(sites, host, false),
-							matchingTbodies = new Elements(matchingSites.map(function(site) {
-								return $('input[value="' + site.id + '"]', true).firstAncestor('tbody');
-							})),
-							$site = document.querySelector('input[value="' + host + '"]'),
-							$tbody;
-						if ( $site ) {
-							$tbody = $site.firstAncestor('tbody');
-						}
-						else {
-							$tbody = $('tbody.new-site', 1);
-						}
+					if ( action == 'open' ) {
+						rweb.ui.openSite($openSite);
+						$openSite.getElement('.el-host').focus();
+					}
+				});
 
-						if ( action == 'hilite' ) {
-							matchingTbodies.addClass('hilited');
-							if ( !$site ) {
-								var $host = $tbody.getElement('.el-host');
-								$host.on('focus', function tmpOnFocus() {
-									this.value = host;
-									this.off('focus', tmpOnFocus);
-								});
-							}
-						}
-
-						if ( action == 'open' ) {
-							rweb.ui.openSite($tbody);
-
-							var $host = $tbody.getElement('.el-host');
-							$host.value = host;
-							$host.focus();
-						}
+				// Add host to new site, when opened
+				var $newHost = $('tbody.new-site', true).getElement('.el-host');
+				$newHost.on('focus', function tmpOnFocus() {
+					if (!this.value) {
+						this.value = host;
 					}
 				});
 			}
