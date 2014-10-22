@@ -87,7 +87,7 @@ rweb = {
 		});
 	},
 	hostMatch: function(hosts, host) {
-		return hosts.split(',').indexOf(host) != -1;
+		return hosts.replace(/\s+/g, '').split(',').indexOf(host) != -1;
 	},
 	hostFilter: function(sites, host, enabled) {
 		enabled == null && (enabled = true);
