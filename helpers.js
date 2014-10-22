@@ -314,7 +314,7 @@ console.time('[RWeb] Re-cached all sites into local');
 		chrome.storage.local.get(null, function(items) {
 			var cidPrefix = 'cache__';
 			var remove = {};
-			$each(items, function(val, key) {
+			Object.keys(items).forEach(function(key) {
 				if ( key.indexOf(cidPrefix) === 0 ) {
 					remove[key] = 1;
 				}
@@ -323,7 +323,7 @@ console.time('[RWeb] Re-cached all sites into local');
 
 			var cache = {};
 			rweb.sites(null, function(sites) {
-				$each(sites, function(site) {
+				sites.forEach(function(site) {
 					if ( site.enabled ) {
 						site.host.split(',').forEach(function(host) {
 							var cid = cidPrefix + host;

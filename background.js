@@ -115,8 +115,6 @@ chrome.storage.onChanged.addListener(function(changes, area) {
 
 		chrome.storage.local.set({"lastDownSync": Date.now()});
 
-		rweb.recache(function() {
-			location.reload();
-		});
+		rweb.recache();
 	}
 });
