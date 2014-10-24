@@ -86,7 +86,7 @@ Element.extend({
 	toggleCheckboxify: function(cb) {
 		cb || (cb = this.getElement('input[type="checkbox"]'));
 		this.removeClass('checked').removeClass('unchecked').addClass(cb.checked ? 'checked' : 'unchecked');
-	}
+	},
 });
 
 
@@ -95,6 +95,18 @@ var $sites, $table, $newSite, $prefs;
 
 rweb.ui = {
 	_state: '',
+
+	nformat: function(n, dec) {
+		var P = Math.pow(10, dec || 0),
+			n = String(Math.round(n * P) / P);
+
+		var x = n.split('.');
+		x[0] = ('00' + x[0]).slice(-2);
+		x[1] || (x[1] = '0');
+		x[1] = (x[1] + '0000000000').substr(0, dec);
+
+		return x.join('.');
+	},
 
 	init: function() {
 		// Elements
@@ -402,13 +414,44 @@ console.log(code);
 
 		$('btn-stats').on('click', function(e) {
 			rweb.sites(null, function(sites) {
-				var online = 0, offline = 0;
+				var tables = {
+					online: {},
+					offline: {},
+				};
+				var totals = {
+					online: {css: 0, js: 0},
+					offline: {css: 0, js: 0},
+				};
+				var online = 0,
+					offline = 0;
 				sites.forEach(function(site) {
 					site.sync ? online++ : offline++;
+
+					var table = site.sync ? 'online' : 'offline';
+					tables[table][site.host] = {
+						css: rweb.ui.nformat(site.css.length / 1024, 2) + ' kb',
+						js: rweb.ui.nformat(site.js.length / 1024, 2) + ' kb',
+					};
+					totals[table].css += site.css.length;
+					totals[table].js += site.js.length;
 				});
 				console.log('[RWeb report]', rweb.thousands(sites.length), 'sites');
 				console.log('[RWeb report]  ', rweb.thousands(offline), 'offline sites');
 				console.log('[RWeb report]  ', rweb.thousands(online), 'online sites');
+
+				console.log('[RWeb report] ONLINE STORAGE:');
+				tables.online.TOTAL = {
+					css: rweb.ui.nformat(totals.online.css, 2) + ' kb',
+					js: rweb.ui.nformat(totals.online.js, 2) + ' kb',
+				};
+				console.table(tables.online);
+
+				console.log('[RWeb report] OFFLINE STORAGE:');
+				tables.offline.TOTAL = {
+					css: rweb.ui.nformat(totals.offline.css / 1024, 2) + ' kb',
+					js: rweb.ui.nformat(totals.offline.js / 1024, 2) + ' kb',
+				};
+				console.table(tables.offline);
 			});
 			chrome.storage.sync.get('chunks', function(items) {
 				console.log('[RWeb report]', rweb.thousands(items.chunks), 'online chunks (max chunk size =', rweb.thousands(chrome.storage.sync.QUOTA_BYTES_PER_ITEM), ')');
