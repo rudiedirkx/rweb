@@ -32,13 +32,24 @@
 			<tr>
 				<th>CSS</th>
 				<td class="content" colspan="2">
-					<textarea name="css" rows="3" class="code expands css el-css"></textarea>
+					<textarea name="css" rows="4" class="code expands css el-css"></textarea>
 				</td>
 			</tr>
 			<tr>
 				<th>JS</th>
 				<td class="content" colspan="2">
-					<textarea name="js" rows="3" class="code expands js el-js" placeholder="Script is executed immediately, when readyState is 'loading'. Use ready(callback) (document DOMContentLoaded) and load(callback) (window load) to time your script."></textarea>
+					<textarea name="js" rows="4" class="code expands js el-js" placeholder="Script is executed immediately (when readyState is 'loading'). Use ready(Function callback) for domready and load(Function callback) for window onload to time your script. For example:
+
+ready(function() {
+	// All the HTML and CSS and JS exist
+	jQuery('.stuff').on('click', new Function);
+});
+
+load(function() {
+	// All done, so do more
+	(new Image).src = '//my.imag.es/preload.gif';
+});
+"></textarea>
 				</td>
 			</tr>
 		</tbody>
