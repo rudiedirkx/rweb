@@ -6,7 +6,7 @@ try {
 			'DISABLED - Re-enable',
 		];
 
-	var menuItemId = chrome.contextMenus.create({
+	var pageMenuItemId = chrome.contextMenus.create({
 		"title": labels[0],
 		"documentUrlPatterns": ['http://*/*', 'https://*/*'],
 		"onclick": function(info, tab) {
@@ -24,6 +24,16 @@ try {
 		}
 	});
 
+	// var browserActionMenuItemId = chrome.contextMenus.create({
+	// 	"title": 'Do something here!',
+	// 	"contexts": ['browser_action'],
+	// 	"onclick": function(info, tab) {
+	// 		setTimeout(function() {
+	// 			alert('Done!');
+	// 		}, 1100);
+	// 	}
+	// });
+
 	function toggleDisabled(cache, host, tab) {
 		cache[host] = !cache[host];
 		nowDisabled = cache[host];
@@ -38,7 +48,7 @@ try {
 
 		// Update label
 		var newLabel = labels[ Number(nowDisabled) ];
-		chrome.contextMenus.update(menuItemId, {"title": newLabel});
+		chrome.contextMenus.update(pageMenuItemId, {"title": newLabel});
 
 		// Update tabs, like options.js does & save setting
 		chrome.tabs.sendMessage(tab.id, {"rweb": {"disabled": nowDisabled}}, function(rsp) {
@@ -72,7 +82,7 @@ try {
 	function updateLabel(disabled, host) {
 		// Update label
 		var newLabel = labels[ Number(disabled) ];
-		chrome.contextMenus.update(menuItemId, {"title": newLabel});
+		chrome.contextMenus.update(pageMenuItemId, {"title": newLabel});
 	}
 }
 catch (ex) {
