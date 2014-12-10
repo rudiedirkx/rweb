@@ -1,19 +1,17 @@
 
 try {
-	var disabled = {}, // local cache, just for speed
-		labels = [
-			'Disable RWeb indefinitely',
-			'DISABLED - Re-enable',
+	var labels = [
+			'Disable RWeb for DOMAIN',
+			'Re-enable RWeb for DOMAIN',
 		];
 
-	var pageMenuItemId = chrome.contextMenus.create({
+	var browserActionMenuItemId = chrome.contextMenus.create({
 		"title": labels[0],
-		"documentUrlPatterns": ['http://*/*', 'https://*/*'],
+		"contexts": ['browser_action'],
 		"onclick": function(info, tab) {
 			if ( !tab.url ) {
 				return console.warn('[RWeb] Could not read origin tab URL. Check optional permissions.');
 			}
-
 			var host = rweb.host(tab.url);
 
 			console.time('get & save disabled');
@@ -24,19 +22,9 @@ try {
 		}
 	});
 
-	// var browserActionMenuItemId = chrome.contextMenus.create({
-	// 	"title": 'Do something here!',
-	// 	"contexts": ['browser_action'],
-	// 	"onclick": function(info, tab) {
-	// 		setTimeout(function() {
-	// 			alert('Done!');
-	// 		}, 1100);
-	// 	}
-	// });
-
 	function toggleDisabled(cache, host, tab) {
 		cache[host] = !cache[host];
-		nowDisabled = cache[host];
+		var nowDisabled = cache[host];
 
 		// Save back into storage.local
 		if ( !cache[host] ) {
@@ -48,7 +36,7 @@ try {
 
 		// Update label
 		var newLabel = labels[ Number(nowDisabled) ];
-		chrome.contextMenus.update(pageMenuItemId, {"title": newLabel});
+		updateLabel(nowDisabled, host, tab.id);
 
 		// Update tabs, like options.js does & save setting
 		chrome.tabs.sendMessage(tab.id, {"rweb": {"disabled": nowDisabled}}, function(rsp) {
@@ -57,14 +45,12 @@ try {
 	}
 
 	chrome.tabs.onUpdated.addListener(function(tabId, info, tab) {
-// console.log('tabs.onUpdated');
 		if ( info.status && tab.active ) {
 			updateLabelStatus(tab);
 		}
 	});
 
 	chrome.tabs.onHighlighted.addListener(function(info) {
-// console.log('tabs.onHighlighted');
 		chrome.tabs.get(info.tabIds[0], function(tab) {
 			updateLabelStatus(tab);
 		});
@@ -75,14 +61,34 @@ try {
 
 		chrome.storage.local.get('disabled', function(items) {
 			var disabled = items.disabled || {};
-			updateLabel(host in disabled, host);
+			updateLabel(host in disabled, host, tab.id);
 		});
 	}
 
-	function updateLabel(disabled, host) {
+	function updateLabel(disabled, host, tabId) {
 		// Update label
-		var newLabel = labels[ Number(disabled) ];
-		chrome.contextMenus.update(pageMenuItemId, {"title": newLabel});
+		var newLabel = labels[ Number(disabled) ].replace('DOMAIN', host);
+		chrome.contextMenus.update(browserActionMenuItemId, {"title": newLabel});
+
+		// Update badge
+		if (disabled) {
+			// Show X on red
+			chrome.browserAction.setBadgeBackgroundColor({
+				color: [255, 0, 0, 255], // red
+				// tabId: tabId,
+			});
+			chrome.browserAction.setBadgeText({
+				text: 'x',
+				// tabId: tabId,
+			});
+		}
+		else {
+			// Hide X
+			chrome.browserAction.setBadgeText({
+				text: '',
+				// tabId: tabId,
+			});
+		}
 	}
 }
 catch (ex) {
