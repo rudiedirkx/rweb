@@ -56,22 +56,25 @@ function doAutoIndent(textarea, indent) {
 		var value = this.value,
 			before = value.substr(0, caret),
 			after = value.substr(caret),
-			lastChar = before.trim().slice(-1);
+			lastChar = before.trim().slice(-1),
+			nextChar = after.substr(0, 1);
 
 		// ENTER
 		if ( code == 13 ) {
 			// Immediately after a {
 			if ( lastChar == '{' ) {
 				var prevLine = getPrevLine(this, before),
-					indents = isIndented(prevLine);
-				return addIndent(this, before, after, indents+1);
+					indents = isIndented(prevLine),
+					more = nextChar == '}' ? 0 : 1;
+				return addIndent(this, before, after, indents + more);
 			}
 
 			// After an indented line
 			var prevLine = getPrevLine(this, before),
-				indents = isIndented(prevLine);
-			if ( indents > 0 ) {
-				addIndent(this, before, after, indents);
+				indents = isIndented(prevLine),
+				more = nextChar == '}' ? -1 : 0;
+			if ( indents + more > 0 ) {
+				addIndent(this, before, after, indents + more);
 			}
 		}
 		else if ( added == '}' ) {
