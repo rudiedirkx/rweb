@@ -519,6 +519,7 @@ console.log(code);
 
 		$('form-disabled').on('submit', function(e) {
 			e.preventDefault();
+			var $form = this;
 
 			var hosts = $('ta-disabled').value.trim();
 			hosts = hosts ? hosts.split("\n") : [];
@@ -529,7 +530,10 @@ console.log(code);
 			});
 
 			chrome.storage.local.set({"disabled": disabled}, function() {
-				alert("Hosts saved.\n\nDisabled-states are cached in the site's sessionStorage, so it might take " + rweb.CONTENT_CACHE_TTL + " s to reset.");
+				$form.addClass('saved');
+				setTimeout(function() {
+					$form.removeClass('saved');
+				}, 1000);
 			});
 		});
 

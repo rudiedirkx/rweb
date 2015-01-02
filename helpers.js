@@ -107,8 +107,8 @@ console.time('[RWeb] Fetched (cached) sites for "' + host + '"');
 
 			if ( items.disabled && items.disabled[host] ) {
 				callback(null, true, options);
-				console.warn('[RWeb] RWeb was explicitly disabled for "' + host + '". I\'ll check again in ' + rweb.CONTENT_CACHE_TTL + ' seconds.');
-console.timeEnd('[RWeb] Fetched (cached) sites for "' + host + '"');
+				console.warn('[RWeb] RWeb was explicitly disabled for "' + host + '".');
+// console.timeEnd('[RWeb] Fetched (cached) sites for "' + host + '"');
 				return;
 			}
 

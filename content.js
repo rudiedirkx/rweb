@@ -1,57 +1,49 @@
 
 var host = rweb.host(location.host);
+rweb.cached(host, function(site, disabled, options) {
+	options.alwaysOutline = options.alwaysOutline == 2 || (site && options.alwaysOutline == 1);
 
-// First check sessionStorage for disablability
-// Then check local cache for specific host
-// And (re)set disablability
+	// Save local stats
+	rweb.matched(host, site);
 
-if ( !sessionStorage.rwebDisabled || !sessionStorage.rwebExpires || sessionStorage.rwebExpires < Date.now() ) {
-	rweb.cached(host, function(site, disabled, options) {
-		options.alwaysOutline = options.alwaysOutline == 2 || (site && options.alwaysOutline == 1);
+	// Update browser action
+	chrome.runtime.sendMessage({site: site, host: host});
 
-		// Save local stats
-		rweb.matched(host, site);
-
-		// Update sessionStorage
-		disabled ? rwebDisable() : rwebEnable();
-
-		// Update browser action
-		chrome.runtime.sendMessage({site: site, host: host});
-
-		// Add CSS & JS
-		if ( site ) {
-			rweb.css(site, options);
-			rweb.js(site, options);
-		}
-		else if ( options.alwaysOutline ) {
-			rweb.css({css: ''}, options);
-		}
-	}, true);
-}
+	// Add CSS & JS
+	if ( site ) {
+		rweb.css(site, options);
+		rweb.js(site, options);
+	}
+	else if ( options.alwaysOutline ) {
+		rweb.css({css: ''}, options);
+	}
+}, true);
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if ( msg.rweb && 'disabled' in msg.rweb ) {
 		// Immediately update page
 		if ( msg.rweb.disabled ) {
-			rwebDisable();
-
 			// Remove all CSS
-			doCSSUpdate('');
+			disableLocalRWebCSS();
 		}
 		else {
-			rwebEnable();
+			enableLocalRWebCSS();
 		}
 	}
 });
 
-function rwebDisable() {
-	sessionStorage.rwebDisabled = 1;
-	sessionStorage.rwebExpires = Date.now() + rweb.CONTENT_CACHE_TTL * 1000;
+function disableLocalRWebCSS() {
+	xableLocalRWebCSS(true);
 }
 
-function rwebEnable() {
-	delete sessionStorage.rwebDisabled;
-	delete sessionStorage.rwebExpires;
+function enableLocalRWebCSS() {
+	xableLocalRWebCSS(false);
+}
+
+function xableLocalRWebCSS(disabled) {
+	[].forEach.call(document.querySelectorAll('style[data-origin="rweb"]'), function(el) {
+		el.disabled = disabled;
+	});
 }
 
 function doCSSUpdate(css) {

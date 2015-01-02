@@ -168,11 +168,14 @@ p[data-notifid].read {
 #prefs .pref {
 	display: inline-block;
 }
-#prefs .saved {
+
+
+
+form .saved {
 	color: green;
 	margin-left: 10px;
 }
-#prefs:not(.saved) .saved {
+form:not(.saved) .saved {
 	display: none;
 }
 
