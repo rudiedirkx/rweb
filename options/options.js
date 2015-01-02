@@ -140,15 +140,16 @@ rweb.ui = {
 					}
 				});
 
-				var $openSite = $('tbody.hilited', true);
-
-				// Maybe open the first
-				rweb.onBrowserActionClick(function(action) {
-					if ( action == 'open' ) {
-						rweb.ui.openSite($openSite);
-						$openSite.getElement('.el-host').focus();
-					}
-				});
+				// Fetch the most specific targeted site to open it
+				var $openSite = $('tbody[data-host="' + host + '"]', true) || $('tbody.hilited', true);
+				if ( $openSite ) {
+					rweb.onBrowserActionClick(function(action) {
+						if ( action == 'open' ) {
+							rweb.ui.openSite($openSite);
+							$openSite.getElement('.el-host').focus();
+						}
+					});
+				}
 
 				// Add host to new site, when opened
 				var $newHost = $('tbody.new-site', true).getElement('.el-host');
@@ -188,6 +189,7 @@ rweb.ui = {
 		rweb.sites(null, function(sites) {
 			sites.each(function(site) {
 				var $tbody = document.el('tbody').setHTML($newSite.getHTML()).injectAfter($table.getFirst());
+				$tbody.attr('data-host', site.host);
 				$tbody.setNamedElementValues(site, true);
 				$tbody.enabledOrDisabledClass();
 			});
@@ -248,6 +250,7 @@ rweb.ui = {
 
 					var tbody = this.firstAncestor('tbody');
 					rweb.ui.closeSites();
+					this.blur();
 				}
 			})
 
