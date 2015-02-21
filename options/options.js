@@ -444,8 +444,8 @@ console.log(code);
 
 				console.log('[RWeb report] ONLINE STORAGE:');
 				tables.online.TOTAL = {
-					css: rweb.ui.nformat(totals.online.css, 2) + ' kb',
-					js: rweb.ui.nformat(totals.online.js, 2) + ' kb',
+					css: rweb.ui.nformat(totals.online.css / 1024, 2) + ' kb',
+					js: rweb.ui.nformat(totals.online.js / 1024, 2) + ' kb',
 				};
 				console.table(tables.online);
 
