@@ -60,6 +60,25 @@ body.loading::before {
 
 
 
+p#online-storage-warning {
+	position: fixed;
+	top: 0px;
+	right: 0px;
+	background-color: #5f5;
+	color: black;
+	padding: 7px 9px;
+	font-weight: bold;
+}
+p#online-storage-warning:not(.loaded) {
+	display: none;
+}
+p#online-storage-warning.warning {
+	background-color: #f00;
+	font-size: 1.2rem;
+}
+
+
+
 p[data-notifid] a {
 	font-weight: bold;
 	color: inherit;

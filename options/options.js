@@ -25,7 +25,7 @@ console.time('[RWeb] UI loaded');
 Element.extend({
 	setNamedElementValues: function(values, initial) {
 		var els = this.getNamedElements();
-		$each(values, function(value, name) {
+		r.each(values, function(value, name) {
 			var el = els[name];
 			if ( el ) {
 				var bool = el.type == 'checkbox',
@@ -44,7 +44,7 @@ Element.extend({
 		var els = this.getNamedElements(),
 			options = {},
 			id = rweb.uuid();
-		$each(els, function(el, name) {
+		r.each(els, function(el, name) {
 			var value = el.type === 'checkbox' ? el.checked : el.value.trim();
 			if ( name == 'id' && !value ) {
 				el.value = value = id;
@@ -91,7 +91,7 @@ Element.extend({
 
 
 
-var $sites, $table, $newSite, $prefs;
+var $warning, $sites, $table, $newSite, $prefs;
 
 rweb.ui = {
 	_state: '',
@@ -101,11 +101,21 @@ rweb.ui = {
 			n = String(Math.round(n * P) / P);
 
 		var x = n.split('.');
-		x[0] = ('00' + x[0]).slice(-2);
+		x[0] = ('  ' + x[0]).slice(-2);
 		x[1] || (x[1] = '0');
 		x[1] = (x[1] + '0000000000').substr(0, dec);
 
 		return x.join('.');
+	},
+
+	sizeOnline: function(sites) {
+		var b = 0;
+		sites.forEach(function(site) {
+			if ( site.sync ) {
+				b += site.css.length + site.js.length;
+			}
+		});
+		return b;
 	},
 
 	init: function() {
@@ -114,10 +124,13 @@ rweb.ui = {
 		$table = $sites.getFirst();
 		$newSite = $table.getElement('tbody');
 		$prefs = $('prefs');
+		$warning = $('online-storage-warning');
 
 		// BUILD SITES
 		rweb.ui.buildSites(function(sites) {
 			rweb.ui.addListeners();
+
+			rweb.ui.updateWarning(sites);
 
 			// Auto indenting of code textareas
 			rweb.ui.getPrefs(function(prefs) {
@@ -136,7 +149,7 @@ rweb.ui = {
 				// Hilite ass matching sites
 				$$('.el-host').each(function(el) {
 					if (rweb.hostMatch(el.value, host)) {
-						el.firstAncestor('tbody').addClass('hilited');
+						el.ancestor('tbody').addClass('hilited');
 					}
 				});
 
@@ -207,6 +220,15 @@ rweb.ui = {
 			return tb != not;
 		}).removeClass('expanded');
 	},
+	updateWarning: function(sites) {
+		var onlineStorage = rweb.ui.sizeOnline(sites) / rweb.USABLE_ONLINE_STORAGE;
+		var pct = Math.ceil(100 * onlineStorage / chrome.storage.sync.QUOTA_BYTES);
+		$warning.toggleClass('warning', pct >= 90);
+		$warning.getElement('.using').setText(pct);
+		var max = rweb.thousands(chrome.storage.sync.QUOTA_BYTES * rweb.USABLE_ONLINE_STORAGE);
+		$warning.getElement('.max').setText(max + 'b');
+		$warning.addClass('loaded');
+	},
 	settings: function(feedback) {
 		return $sites.getElements('tbody')
 			.map(function(tb) {
@@ -225,7 +247,7 @@ rweb.ui = {
 		$sites
 			// Open site
 			.on('focus', '.el-host', function(e) {
-				var tbody = this.firstAncestor('tbody');
+				var tbody = this.ancestor('tbody');
 				rweb.ui.openSite(tbody);
 			})
 
@@ -239,7 +261,7 @@ rweb.ui = {
 
 			// Toggle 'enabled'
 			.on('change', '.el-enabled', rweb.ui.onendisable = function(e) {
-				var tbody = this.firstAncestor('tbody');
+				var tbody = this.ancestor('tbody');
 				tbody.enabledOrDisabledClass();
 			})
 
@@ -248,7 +270,7 @@ rweb.ui = {
 				if ( e.key == Event.Keys.esc ) {
 					this.value = this.defaultValue;
 
-					var tbody = this.firstAncestor('tbody');
+					var tbody = this.ancestor('tbody');
 					rweb.ui.closeSites();
 					this.blur();
 				}
@@ -298,7 +320,7 @@ rweb.ui = {
 					// Propagate new CSS to open tabs
 					var focused = document.activeElement;
 					if ( focused ) {
-						var tbody = focused.firstAncestor('tbody');
+						var tbody = focused.ancestor('tbody');
 						if ( tbody ) {
 							var updatedHosts = tbody.getElement('.el-host');
 							if ( updatedHosts ) {
@@ -329,7 +351,7 @@ rweb.ui = {
 			.on('keyup', 'input, textarea', function(e) {
 				// Undo disabled state
 				if ( this.hasClass('code') && this.value != '' ) {
-					var tbody = this.firstAncestor('tbody');
+					var tbody = this.ancestor('tbody');
 					tbody.removeClass('new-site');
 				}
 
@@ -417,6 +439,15 @@ console.log(code);
 
 		$('btn-stats').on('click', function(e) {
 			rweb.sites(null, function(sites) {
+
+				console.log(sites);
+				sites.sort(function(a, b) {
+					return a.host > b.host ? 1 : -1;
+				});
+				console.log(sites.map(function(site) {
+					return site.host;
+				}));
+
 				var tables = {
 					online: {},
 					offline: {},
@@ -432,8 +463,8 @@ console.log(code);
 
 					var table = site.sync ? 'online' : 'offline';
 					tables[table][site.host] = {
-						css: rweb.ui.nformat(site.css.length / 1024, 2) + ' kb',
-						js: rweb.ui.nformat(site.js.length / 1024, 2) + ' kb',
+						css: site.css.length ? rweb.ui.nformat(site.css.length / 1024, 2) + ' kb' : '',
+						js: site.js.length ? rweb.ui.nformat(site.js.length / 1024, 2) + ' kb' : '',
 					};
 					totals[table].css += site.css.length;
 					totals[table].js += site.js.length;
@@ -470,13 +501,13 @@ console.log(code);
 			chrome.storage.local.get(['history', 'disabled'], function(items) {
 				if ( items.history ) {
 					console.log('[RWeb report] Matching history:');
-					$each(items.history, function(num, host) {
+					r.each(items.history, function(num, host) {
 						console.log('[RWeb report]  ', rweb.thousands(num), 'x - ' + host);
 					});
 				}
 				if ( items.disabled ) {
 					console.log('[RWeb report] Disabled on sites:');
-					$each(items.disabled, function(num, host) {
+					r.each(items.disabled, function(num, host) {
 						console.log('[RWeb report]  ', host);
 					});
 				}
