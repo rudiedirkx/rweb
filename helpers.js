@@ -1,6 +1,6 @@
 
 rweb = {
-	USABLE_ONLINE_STORAGE: .8,
+	USABLE_ONLINE_STORAGE: .85,
 	CONTENT_CACHE_TTL: 300,
 
 	uuid: function() {
@@ -178,7 +178,7 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 
 		// Get ONLINE
 // console.time('chrome.storage.sync.get');
-		chrome.storage.sync.get(['chunks', '0', '1', '2', '3'], function(items) {
+		chrome.storage.sync.get(['chunks', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14'], function(items) {
 // console.timeEnd('chrome.storage.sync.get');
 			if ( items.chunks ) {
 				// Append JSON data
