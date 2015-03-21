@@ -1,5 +1,5 @@
 
-try {
+// try {
 	var labels = [
 			'Disable RWeb for DOMAIN',
 			'Re-enable RWeb for DOMAIN',
@@ -45,14 +45,32 @@ try {
 	}
 
 	chrome.tabs.onUpdated.addListener(function(tabId, info, tab) {
+		// console.log('onUpdated', tabId, info, tab);
 		if ( info.status && tab.active ) {
 			updateLabelStatus(tab);
 		}
 	});
 
-	chrome.tabs.onHighlighted.addListener(function(info) {
-		chrome.tabs.get(info.tabIds[0], function(tab) {
+	chrome.tabs.onActivated.addListener(function(info) {
+		// console.log('onActivated', info);
+		chrome.tabs.get(info.tabId, function(tab) {
 			updateLabelStatus(tab);
+		});
+	});
+
+	chrome.windows.onFocusChanged.addListener(function(windowId) {
+		chrome.windows.get(windowId, {"populate": true}, function(window) {
+			var e = chrome.runtime.lastError; // Stut up, Chrome
+			if ( !window ) return;
+			// console.log('onFocusChanged', windowId, window);
+
+			for ( var i=window.tabs.length-1; i>=0; i-- ) {
+				var tab = window.tabs[i];
+				if ( tab.active ) {
+					updateLabelStatus(tab);
+					break;
+				}
+			};
 		});
 	});
 
@@ -75,28 +93,28 @@ try {
 			// Show X on red
 			chrome.browserAction.setBadgeBackgroundColor({
 				color: [255, 0, 0, 255], // red
-				// tabId: tabId,
+				tabId: tabId,
 			});
 			chrome.browserAction.setBadgeText({
 				text: 'x',
-				// tabId: tabId,
+				tabId: tabId,
 			});
 		}
 		else {
 			// Hide X
 			chrome.browserAction.setBadgeText({
 				text: '',
-				// tabId: tabId,
+				tabId: tabId,
 			});
 		}
 	}
-}
-catch (ex) {
+// }
+// catch (ex) {
 	// No permission?
 	// DEBUG //
-	throw ex;
+	// throw ex;
 	// DEBUG //
-}
+// }
 
 chrome.browserAction.onClicked.addListener(function(tab) {
 	var a = document.createElement('a');
