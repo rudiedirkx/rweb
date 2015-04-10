@@ -394,7 +394,6 @@ rweb.ui = {
 
 			// Parse import
 			var code = this.elements.code.value;
-console.log(code);
 			try {
 				var newSites = JSON.parse(code);
 			}
