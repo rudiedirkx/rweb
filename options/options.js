@@ -415,7 +415,7 @@ console.log(code);
 								add.push(site);
 							}
 							else {
-								$merge(existingSites[site.id], site);
+								r.merge(existingSites[site.id], site);
 								update++;
 							}
 						});
