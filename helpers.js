@@ -170,10 +170,17 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 
 		function parseOnlineData(json) {
 // console.debug('json', json.length);
-			var data = JSON.parse(json);
+			try {
+				var data = JSON.parse(json);
 // console.debug('data', data);
-			// Online data isn't namespaced into 'sites', like unencoded offline data
-			addSites(data);
+
+				// Online data isn't namespaced into 'sites', like unencoded offline data
+				addSites(data);
+			}
+			catch (ex) {
+				console.warn("ERROR decoding online sites. Discarding all of it. I hope you have a back-up!", ex);
+				cbProxy();
+			}
 		}
 
 		// Get ONLINE
