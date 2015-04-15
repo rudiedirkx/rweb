@@ -1,7 +1,7 @@
 {
 	"name": "RWeb",
 	"description": "Simple tool for customizing websites by adding your own CSS & JS.",
-	"version": "1.9",
+	"version": "1.10",
 
 	"permissions": [ "storage", "tabs", "contextMenus" ],
 
