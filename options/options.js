@@ -89,16 +89,6 @@ rweb.ui = {
 		return x.join('.');
 	},
 
-	sizeOnline: function(sites) {
-		var b = 0;
-		sites.forEach(function(site) {
-			if ( site.sync ) {
-				b += site.css.length + site.js.length;
-			}
-		});
-		return b;
-	},
-
 	init: function() {
 		// Elements
 		$sites = $('sites');
@@ -358,8 +348,9 @@ console.log(updatedHosts.value);
 		$('btn-export').on('click', function(e) {
 			var settings = rweb.ui.settings(false);
 
-			var $form = $('ta-export');
-			if ( $ta.toggle() ) {
+			var $form = $('form-export');
+			if ( $form.toggle() ) {
+				var $ta = $('ta-export');
 				$ta.value = JSON.stringify(settings);
 				$ta.focus();
 				$ta.selectionStart = 0;
@@ -454,7 +445,7 @@ console.log(updatedHosts.value);
 	propagateNewCSS: function(updatedHosts) {
 		chrome.storage.local.get(['disabled'], function(items) {
 			var disabled = items.disabled || {};
-			var sites = sites = rweb.ui.settings();
+			var sites = rweb.ui.settings();
 			var counter = {};
 
 			chrome.tabs.query({active: false}, function(tabs) {
@@ -483,7 +474,7 @@ console.log(updatedHosts.value);
 		});
 	},
 
-	import: function(newSites) {
+	import: function(newSites, callback) {
 		// Validate import
 		if ( newSites instanceof Array ) {
 			newSites = newSites.filter(rweb.ui.siteFilter);
@@ -534,11 +525,19 @@ console.log(updatedHosts.value);
 						rweb.saveSites(existingSitesList, function() {
 							location.reload();
 						});
+
+						callback(true);
 					}
+
+					callback(false);
 				});
 			}
+
+			callback(false);
 			return alert('No valid sites found');
 		}
+
+		callback(false);
 		return alert('Not an array of sites');
 	},
 
@@ -550,12 +549,15 @@ console.log(updatedHosts.value);
 	},
 	download: function() {
 		var handler = function(sites) {
-			chrome.storage.local.set({lastDownload: Date.now()}, function() {
-				console.log('Saved `lastDownload.');
-			});
-
 			console.log('Downloaded sites', sites);
-			rweb.ui.import(sites);
+
+			rweb.ui.import(sites, function(imported) {
+				if ( imported ) {
+					chrome.storage.local.set({lastDownload: Date.now()}, function() {
+						console.log('Saved `lastDownload.');
+					});
+				}
+			});
 		};
 
 		rweb.ui.connect(function(token) {
@@ -629,7 +631,7 @@ console.debug(type + ':status', status);
 					});
 				}
 				// Success
-				else if ( status == 200 ) {
+				else if ( status >= 200 && status < 400 ) {
 					body.call(this, e);
 				}
 				// Any error
@@ -772,5 +774,5 @@ document.body.onload = function() {
 		if ( site ) {
 			site.css && rweb.css(site.css);
 		}
-	});
+	}, {includeWildcard: false});
 };

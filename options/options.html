@@ -76,17 +76,20 @@ load(function() {
 	</table>
 </form>
 
-<form id="form-export" style="display: none">
+<form class="pop-out" id="form-export" style="display: none">
+	<h2>Export</h2>
 	<textarea rows="6" id="ta-export"></textarea>
 </form>
 
-<form id="form-import" style="display: none">
+<form class="pop-out" id="form-import" style="display: none">
+	<h2>Import</h2>
 	<textarea rows="6" name="code" id="ta-import">[{"host": "example.com", "css": "body.example.com { background: red; }", "js": "", "enabled": false, "sync": false}]</textarea><br>
 	<input type="submit" value="Import" />
 </form>
 
-<form id="form-disabled" style="display: none">
-	This lists the hosts RWeb is disabled for. You can use the green button's right click menu or this textarea to change hosts.<br>
+<form class="pop-out" id="form-disabled" style="display: none">
+	<h2>Blacklist</h2>
+	<p>This lists the hosts RWeb is disabled for. You can use the green button's right click menu or this textarea to change hosts.</p>
 	<textarea rows="6" name="hosts" id="ta-disabled" placeholder="plus.google.com
 platform.twitter.com"></textarea><br>
 	<input type="submit" value="Save" />

@@ -6,9 +6,11 @@
 if ( document.documentElement && document.documentElement.nodeName == 'HTML' && location.protocol != 'chrome-extension:' ) {
 	var host = rweb.host(location.host);
 	rweb.site(host, function(site, disabled) {
-		if ( site ) {
+		if ( site && !disabled ) {
 			// Save stats
-			rweb.matched(host);
+			if ( site.specific ) {
+				rweb.matched(host);
+			}
 
 			// Add CSS & JS
 			site.css && rweb.css(site.css);

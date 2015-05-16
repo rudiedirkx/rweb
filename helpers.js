@@ -49,29 +49,33 @@ rweb = {
 	saveSites: function(sites, callback) {
 		chrome.storage.local.set({sites: sites, lastSave: Date.now()}, callback);
 	},
+
 	hostMatch: function(hosts, host) {
 		return hosts.replace(/\s+/g, '').split(',').indexOf(host) != -1;
 	},
-	hostFilter: function(sites, host, enabled) {
-		enabled == null && (enabled = true);
+	hostFilter: function(sites, host, options) {
+		options || (options = {});
+		var checkEnabled = options.checkEnabled != null ? options.checkEnabled : true;
+		var includeWildcard = options.includeWildcard != null ? options.includeWildcard : true;
+
 		return sites.filter(function(site) {
-			if ( !enabled || site.enabled ) {
-				if ( site.host == '*' || site.host.split(',').indexOf(host) != -1 ) {
+			if ( !checkEnabled || site.enabled ) {
+				if ( (includeWildcard && site.host == '*') || rweb.hostMatch(site.host, host) ) {
 					return true;
 				}
 			}
 		});
 	},
-	sites: function(host, callback) {
-console.log('rweb.sites()');
-		// Get OFFLINE
+
+	sites: function(host, callback, options) {
+		console.time('rweb.sites ("' + host + '")');
 		chrome.storage.local.get(['sites', 'disabled'], function(items) {
 			var disabled = host && items.disabled && items.disabled[host];
 			var sites = items.sites || [];
 
 			// If this is a query, don't bother sorting, but filter
 			if ( host ) {
-				sites = rweb.hostFilter(sites, host, true);
+				sites = rweb.hostFilter(sites, host, options);
 			}
 			// No query, so sort and no filter
 			else {
@@ -80,26 +84,40 @@ console.log('rweb.sites()');
 				});
 			}
 
-console.log('sites ("' + (host || '') + '")', sites.length, sites);
+			if ( host && !disabled ) {
+				console.timeEnd('rweb.sites ("' + host + '")');
+			}
 			callback(sites, disabled);
 		});
 	},
-
-	site: function(host, callback, connect) {
+	site: function(host, callback, options) {
 		rweb.sites(host, function(sites, disabled) {
 			if ( !sites.length ) {
 				return callback(false, disabled);
 			}
 
 			var css = '', js = '';
+			var wildcard = 0, specific = 0;
 			sites.forEach(function(site) {
 				css += "\n" + site.css;
 				js += "\n" + site.js;
+
+				site.host == '*' && wildcard++;
+				rweb.hostMatch(site.host, host) && specific++;
 			});
 
-			var site = {css: css.trim(), js: js.trim()};
+			if ( !disabled ) {
+				console.debug('- sites: ' + sites.length + ', specific: ' + Number(specific) + ', wildcard: ' + Number(wildcard));
+			}
+
+			var site = {
+				css: css.trim(),
+				js: js.trim(),
+				wildcard: wildcard,
+				specific: specific,
+			};
 			callback(site, disabled);
-		});
+		}, options);
 	},
 
 	sitesByUUID: function(callback) {

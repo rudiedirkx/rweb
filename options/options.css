@@ -60,25 +60,6 @@ body.loading::before {
 
 
 
-p#online-storage-warning {
-	position: fixed;
-	top: 0px;
-	right: 0px;
-	background-color: #5f5;
-	color: black;
-	padding: 7px 9px;
-	font-weight: bold;
-}
-p#online-storage-warning:not(.loaded) {
-	display: none;
-}
-p#online-storage-warning.warning {
-	background-color: #f00;
-	font-size: 1.2rem;
-}
-
-
-
 p[data-notifid] a {
 	font-weight: bold;
 	color: inherit;
@@ -167,11 +148,14 @@ p[data-notifid].read {
 
 
 
-#btn-recache.behind {
-	background-color: #d00;
-	color: white;
-	font-weight: bold;
-	text-transform: uppercase;
+form.pop-out {
+	box-shadow: 0 0 10px #ccc;
+	border: solid 2px #ccc;
+	background-color: #ddd;
+	padding: 10px;
+}
+form.pop-out h2 {
+	margin: 0 0 .5em 0;
 }
 
 
