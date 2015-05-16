@@ -142,13 +142,3 @@ chrome.runtime.onMessage.addListener(function(msg, sender) {
 		});
 	}
 });
-
-chrome.storage.onChanged.addListener(function(changes, area) {
-	if (area == 'sync') {
-		console.log('[background] onChanged', area, changes);
-
-		chrome.storage.local.set({"lastDownSync": Date.now()});
-
-		rweb.recache();
-	}
-});

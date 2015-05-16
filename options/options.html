@@ -9,9 +9,8 @@
 
 <body class="loading">
 
-<p id="online-storage-warning">Using <span class="using">?</span> % of <span class="max">?</span> online storage</p>
-
 <p data-notifid="1">Saving this form from within a textfield (CTRL + S), will propagate CSS to all relevant open tabs.</p>
+<p data-notifid="2">You can UPLOAD and DOWNLOAD data to/from Google Drive manually. For now, I WON'T CHECK AUTOMATICALLY.</p>
 
 <form id="sites">
 	<table>
@@ -19,7 +18,6 @@
 			<tr>
 				<th>Enable?</th>
 				<th></th>
-				<th>Sync?</th>
 			</tr>
 		</thead>
 		<tbody class="new-site">
@@ -31,25 +29,18 @@ Will still take up space when disabled.">
 				</td>
 				<td class="content">
 					<input name="id" type="hidden" />
-					<input name="host" class="host el-host" placeholder="Hosts / domains. Use comma to separate more. Use '::' to target this page." />
-				</td>
-				<td class="sync checkboxify" title="Save online?
-
-Privately, in your Google profile.">
-					<label>
-						<input type="checkbox" name="sync" class="el-sync" />
-					</label>
+					<input name="host" class="host el-host" placeholder="Hosts / domains. Use comma to separate more. Use * for all websites. Use 'options' to target this page." />
 				</td>
 			</tr>
 			<tr>
 				<th>CSS</th>
-				<td class="content" colspan="2">
+				<td class="content">
 					<textarea name="css" rows="4" class="code expands css el-css"></textarea>
 				</td>
 			</tr>
 			<tr>
 				<th>JS</th>
-				<td class="content" colspan="2">
+				<td class="content">
 					<textarea name="js" rows="4" class="code expands js el-js" placeholder="Script is executed immediately (when readyState is 'loading'). Use ready(Function callback) for domready and load(Function callback) for window onload to time your script. For example:
 
 ready(function() {
@@ -74,18 +65,20 @@ load(function() {
 					<input type="button" value="Export" id="btn-export" disabled />
 					<input type="button" value="Import" id="btn-import" disabled />
 					&nbsp;
-					<input type="button" value="Stats" id="btn-stats" disabled title="Prints of a bunch of (mostly local) stats to the Console." />
-					<input type="button" value="Disabled" id="btn-disabled" disabled title="Edit your disabled sites. Might induce a disabled-state delay on the relevant website." />
-					<input type="button" value="Re-cache" id="btn-recache" disabled title="On the front-end RWeb uses quick-cache only. This means data is not loaded live, meaning you might have to manually re-cache.
-
-I can't force a download/sync! That's up to Chrome alone. If you don't see your site in the above table, wait some more and reload this page." />
+					<input type="button" value="Stats" id="btn-stats" disabled data-disabled title="Prints of a bunch of (mostly local) stats to the Console." />
+					<input type="button" value="Blacklist" id="btn-disabled" disabled title="Edit your disabled sites. Might induce a disabled-state delay on the relevant website." />
+					&nbsp;
+					<input type="button" value="DOWNLOAD" id="btn-download" disabled title="Manually download sites from your GDrive." />
+					<input type="button" value="UPLOAD" id="btn-upload" disabled title="Manually upload sites to your GDrive." />
 				</td>
 			</tr>
 		</tfoot>
 	</table>
 </form>
 
-<p><textarea style="display: none" rows="6" id="ta-export"></textarea></p>
+<form id="form-export" style="display: none">
+	<textarea rows="6" id="ta-export"></textarea>
+</form>
 
 <form id="form-import" style="display: none">
 	<textarea rows="6" name="code" id="ta-import">[{"host": "example.com", "css": "body.example.com { background: red; }", "js": "", "enabled": false, "sync": false}]</textarea><br>
@@ -94,7 +87,8 @@ I can't force a download/sync! That's up to Chrome alone. If you don't see your 
 
 <form id="form-disabled" style="display: none">
 	This lists the hosts RWeb is disabled for. You can use the green button's right click menu or this textarea to change hosts.<br>
-	<textarea rows="6" name="hosts" id="ta-disabled"></textarea><br>
+	<textarea rows="6" name="hosts" id="ta-disabled" placeholder="plus.google.com
+platform.twitter.com"></textarea><br>
 	<input type="submit" value="Save" />
 	<span class="saved">Saved!</span>
 </form>
@@ -115,21 +109,6 @@ I can't force a download/sync! That's up to Chrome alone. If you don't see your 
 				<option value="%09">Yes, tabs</option>
 				<option value="%20%20">Yes, 2 spaces</option>
 				<option value="%20%20%20%20">Yes, 4 spaces</option>
-			</select>
-		</span>
-		<span class="pref">
-			Extend <code>NodeList</code>:
-			<select name="extendNodeList">
-				<option value="0">No</option>
-				<option value="1">Yes</option>
-			</select>
-		</span>
-		<span class="pref">
-			Always <code>outline</code>:
-			<select name="alwaysOutline">
-				<option value="0">Never</option>
-				<option value="1">Only enabled sites</option>
-				<option value="2">ALL sites</option>
 			</select>
 		</span>
 		<input type="submit" value="Save" />

@@ -1,27 +1,4 @@
 
-/**
- * To do:
- * [x] 'sites' in storage.sync should be 'chunks'
- * [x] Better dirty check: check hash or JSON, not just onchange (or better!)
- * [x] Unmark newly created site 'disabled' and 'new' so it's opaque after saving
- * [x] Add onbeforeunload to warn about unsaved changes (with better dirty check)
- * [x] Show online/offline/sync status in the sites table
- * [x] Local option 'onBrowserActionClick':
- *      o open options
- *      o open options with site prefilled
- *      o open options with site hilited
- *      o start select0r
- * [x] Create a status report with useless statistics
- * [x] More useful stats in the status report, like hits & misses
- * [x] Key sites by UUID so importing and syncing make sense
- * [x] Create import that respects UUIDs
- * [x] Automatic indenting on { + ENTER and unindenting on }
- * [ ] ? TAB options in options UI (ignore, tab=TAB, tab=CTRL+TAB)
- * [ ] ? Implement Select0r
- */
-
-console.time('[RWeb] UI loaded');
-
 Element.extend({
 	setNamedElementValues: function(values, initial) {
 		var els = this.getNamedElements();
@@ -91,10 +68,14 @@ Element.extend({
 
 
 
-var $warning, $sites, $table, $newSite, $prefs;
+var $sites, $table, $newSite, $prefs;
 
 rweb.ui = {
 	_state: '',
+
+	equal: function(site1, site2) {
+		return JSON.stringify(site1) == JSON.stringify(site2);
+	},
 
 	nformat: function(n, dec) {
 		var P = Math.pow(10, dec || 0),
@@ -124,13 +105,10 @@ rweb.ui = {
 		$table = $sites.getFirst();
 		$newSite = $table.getElement('tbody');
 		$prefs = $('prefs');
-		$warning = $('online-storage-warning');
 
-		// BUILD SITES
+		// // BUILD SITES
 		rweb.ui.buildSites(function(sites) {
 			rweb.ui.addListeners();
-
-			rweb.ui.updateWarning(sites);
 
 			// Auto indenting of code textareas
 			rweb.ui.getPrefs(function(prefs) {
@@ -178,8 +156,6 @@ rweb.ui = {
 			document.body.removeClass('loading');
 
 			$$('tfoot input:not([data-disabled])').attr('disabled', null);
-
-			console.timeEnd('[RWeb] UI loaded');
 		});
 
 		// SHOW PREFERENCES
@@ -198,7 +174,6 @@ rweb.ui = {
 		return site.host && ( site.js || site.css );
 	},
 	buildSites: function(callback) {
-// console.time('[RWeb options] buildSites');
 		rweb.sites(null, function(sites) {
 			sites.each(function(site) {
 				var $tbody = document.el('tbody').setHTML($newSite.getHTML()).injectAfter($table.getFirst());
@@ -206,10 +181,9 @@ rweb.ui = {
 				$tbody.setNamedElementValues(site, true);
 				$tbody.enabledOrDisabledClass();
 			});
-// console.timeEnd('[RWeb options] buildSites');
 
 			callback(sites);
-		});
+		}, rweb.ui.download);
 	},
 	openSite: function(tbody) {
 		rweb.ui.closeSites(tbody);
@@ -220,24 +194,16 @@ rweb.ui = {
 			return tb != not;
 		}).removeClass('expanded');
 	},
-	updateWarning: function(sites) {
-		var onlineStorage = rweb.ui.sizeOnline(sites) / rweb.USABLE_ONLINE_STORAGE;
-		var pct = Math.ceil(100 * onlineStorage / chrome.storage.sync.QUOTA_BYTES);
-		$warning.toggleClass('warning', pct >= 90);
-		$warning.getElement('.using').setText(pct);
-		var max = rweb.thousands(chrome.storage.sync.QUOTA_BYTES * rweb.USABLE_ONLINE_STORAGE);
-		$warning.getElement('.max').setText(max + 'b');
-		$warning.addClass('loaded');
-	},
-	settings: function(feedback) {
+	settings: function(update) {
 		return $sites.getElements('tbody')
 			.map(function(tb) {
-				return tb.getNamedElementValues(feedback);
+				return tb.getNamedElementValues(update);
 			})
 			.filter(rweb.ui.siteFilter)
 		;
 	},
 	addListeners: function() {
+
 		window.on('beforeunload', function(e) {
 			if ( rweb.ui.dirty() ) {
 				return "You have unsaved changes. Leaving this page will discard those changes.";
@@ -307,8 +273,6 @@ rweb.ui = {
 				rweb.ui._state = JSON.encode(settings);
 
 				rweb.saveSites(settings, function() {
-					rweb.recache();
-
 					// clean/dirty => saved
 					$sites.removeClass('dirty').addClass('saved');
 
@@ -324,6 +288,7 @@ rweb.ui = {
 						if ( tbody ) {
 							var updatedHosts = tbody.getElement('.el-host');
 							if ( updatedHosts ) {
+console.log(updatedHosts.value);
 								rweb.ui.propagateNewCSS(updatedHosts.value);
 							}
 						}
@@ -370,23 +335,48 @@ rweb.ui = {
 
 		$sites.getElements('.checkboxify').toggleCheckboxify();
 
-		$('btn-export').on('click', function(e) {
-			$('form-import').hide();
 
-			var settings = rweb.ui.settings(false);
 
-			var ta = $('ta-export');
-			ta.value = JSON.stringify(settings);
-			ta.show().focus();
-			ta.selectionStart = 0;
-			ta.selectionEnd = ta.value.length;
+		/**
+		 * UPLOAD & DOWNLOAD
+		 */
+
+		$('btn-download').on('click', function() {
+			rweb.ui.download();
 		});
 
-		$('btn-import').on('click', function(e) {
-			$('ta-export').hide();
+		$('btn-upload').on('click', function() {
+			rweb.ui.upload();
+		});
 
-			$('form-import').show();
-			$('ta-import').focus();
+
+
+		/**
+		 * EXPORT
+		 */
+
+		$('btn-export').on('click', function(e) {
+			var settings = rweb.ui.settings(false);
+
+			var $form = $('ta-export');
+			if ( $ta.toggle() ) {
+				$ta.value = JSON.stringify(settings);
+				$ta.focus();
+				$ta.selectionStart = 0;
+				$ta.selectionEnd = $ta.value.length;
+			}
+		});
+
+
+
+		/**
+		 * IMPORT
+		 */
+
+		$('btn-import').on('click', function(e) {
+			if ( $('form-import').toggle() ) {
+				$('ta-import').focus();
+			}
 		});
 
 		$('form-import').on('submit', function(e) {
@@ -398,147 +388,17 @@ rweb.ui = {
 				var newSites = JSON.parse(code);
 			}
 			catch (ex) {
-				alert('Invalid code:\n\n' + ex);
+				return alert('Invalid code:\n\n' + ex);
 			}
 
-			// Validate import
-			if ( newSites instanceof Array ) {
-				newSites = newSites.filter(rweb.ui.siteFilter);
-				if ( newSites.length ) {
-					return rweb.sitesByUUID(function(existingSites, existingSitesList) {
-						var add = [],
-							update = 0;
-						newSites.forEach(function(site) {
-							if ( !site.id || !existingSites[site.id] ) {
-								site.id || (site.id = rweb.uuid());
-								add.push(site);
-							}
-							else {
-								r.merge(existingSites[site.id], site);
-								update++;
-							}
-						});
-						// Summarize & confirm
-						if ( confirm('Import summary:\n\n' + add.length + ' sites will be added\n' + update + ' sites will be updated\n\nDo you agree? Changes will be saved directly and cannot be undone.') ) {
-							add.forEach(function(site) {
-								existingSitesList.push(site);
-							});
-							rweb.saveSites(existingSitesList, function() {
-								rweb.recache(function() {
-									location.reload();
-								});
-							});
-						}
-					});
-				}
-				return alert('No valid sites found');
-			}
-			return alert('Not an array of sites');
+			rweb.ui.import(newSites);
 		});
 
-		$('btn-stats').on('click', function(e) {
-			rweb.sites(null, function(sites) {
 
-				console.log(sites);
-				sites.sort(function(a, b) {
-					return a.host > b.host ? 1 : -1;
-				});
-				console.log(sites.map(function(site) {
-					return site.host;
-				}));
 
-				var tables = {
-					online: {},
-					offline: {},
-				};
-				var totals = {
-					online: {css: 0, js: 0},
-					offline: {css: 0, js: 0},
-				};
-				var online = 0,
-					offline = 0;
-				sites.forEach(function(site) {
-					site.sync ? online++ : offline++;
-
-					var table = site.sync ? 'online' : 'offline';
-					tables[table][site.host] = {
-						css: site.css.length ? rweb.ui.nformat(site.css.length / 1024, 2) + ' kb' : '',
-						js: site.js.length ? rweb.ui.nformat(site.js.length / 1024, 2) + ' kb' : '',
-					};
-					totals[table].css += site.css.length;
-					totals[table].js += site.js.length;
-				});
-				console.log('[RWeb report]', rweb.thousands(sites.length), 'sites');
-				console.log('[RWeb report]  ', rweb.thousands(offline), 'offline sites');
-				console.log('[RWeb report]  ', rweb.thousands(online), 'online sites');
-
-				console.log('[RWeb report] ONLINE STORAGE:');
-				tables.online.TOTAL = {
-					css: rweb.ui.nformat(totals.online.css / 1024, 2) + ' kb',
-					js: rweb.ui.nformat(totals.online.js / 1024, 2) + ' kb',
-				};
-				console.table(tables.online);
-
-				console.log('[RWeb report] OFFLINE STORAGE:');
-				tables.offline.TOTAL = {
-					css: rweb.ui.nformat(totals.offline.css / 1024, 2) + ' kb',
-					js: rweb.ui.nformat(totals.offline.js / 1024, 2) + ' kb',
-				};
-				console.table(tables.offline);
-			});
-			chrome.storage.sync.get('chunks', function(items) {
-				console.log('[RWeb report]', rweb.thousands(items.chunks), 'online chunks (max chunk size =', rweb.thousands(chrome.storage.sync.QUOTA_BYTES_PER_ITEM), ')');
-			});
-			chrome.storage.sync.getBytesInUse(null, function(bytes) {
-				var pct = Math.ceil(100 * bytes / (chrome.storage.sync.QUOTA_BYTES * rweb.USABLE_ONLINE_STORAGE));
-				console.log('[RWeb report]', rweb.thousands(bytes), '/', rweb.thousands(chrome.storage.sync.QUOTA_BYTES * rweb.USABLE_ONLINE_STORAGE), 'bytes (', pct, '%) online storage in use');
-			});
-			chrome.storage.local.getBytesInUse(null, function(bytes) {
-				var pct = Math.ceil(100 * bytes / (chrome.storage.local.QUOTA_BYTES));
-				console.log('[RWeb report]', rweb.thousands(bytes), '/', rweb.thousands(chrome.storage.local.QUOTA_BYTES), 'bytes (', pct, '%) offline storage in use');
-			});
-			chrome.storage.local.get(['history', 'disabled'], function(items) {
-				if ( items.history ) {
-					console.log('[RWeb report] Matching history:');
-					r.each(items.history, function(num, host) {
-						console.log('[RWeb report]  ', rweb.thousands(num), 'x - ' + host);
-					});
-				}
-				if ( items.disabled ) {
-					console.log('[RWeb report] Disabled on sites:');
-					r.each(items.disabled, function(num, host) {
-						console.log('[RWeb report]  ', host);
-					});
-				}
-			});
-
-			chrome.storage.sync.get(null, function(items) {
-				console.log('[RWeb report] Synced keys:');
-				console.log("[RWeb report]   '" + Object.keys(items).join("', '") + "'");
-			});
-			chrome.storage.local.get(null, function(items) {
-				console.log('[RWeb report] Local keys:');
-				console.log("[RWeb report]   '" + Object.keys(items).join("', '") + "'");
-			});
-
-			chrome.storage.local.get(['lastDownSync', 'lastReCache'], function(items) {
-				console.log('[RWeb report] Last downsync: ' + ( items.lastDownSync ? new Date(items.lastDownSync) : '-' ));
-				console.log('[RWeb report] Last re-cache: ' + ( items.lastReCache ? new Date(items.lastReCache) : '-' ));
-			});
-		});
-
-		$prefs.on('submit', function(e) {
-			e.preventDefault();
-
-			var prefs = this.getNamedElementValues(true);
-
-			chrome.storage.local.set(prefs, function() {
-				$prefs.addClass('saved');
-				setTimeout(function() {
-					$prefs.removeClass('saved');
-				}, 1000);
-			});
-		});
+		/**
+		 * DISABLED / BLACKLIST
+		 */
 
 		$('btn-disabled').on('click', function(e) {
 			chrome.storage.local.get('disabled', function(items) {
@@ -570,46 +430,285 @@ rweb.ui = {
 			});
 		});
 
-		$('btn-recache').on('click', function(e) {
-			rweb.recache(function() {
-				location.reload();
+
+
+		/**
+		 * PREFERENCES
+		 */
+
+		$prefs.on('submit', function(e) {
+			e.preventDefault();
+
+			var prefs = this.getNamedElementValues(true);
+
+			chrome.storage.local.set(prefs, function() {
+				$prefs.addClass('saved');
+				setTimeout(function() {
+					$prefs.removeClass('saved');
+				}, 1000);
 			});
 		});
 
-		chrome.storage.local.get(['lastDownSync', 'lastReCache'], function(items) {
-			setTimeout(function() {
-				var sites = rweb.ui.settings();
-				if ( sites.length ) {
-					if ( !items.lastReCache || items.lastReCache < items.lastDownSync-5000 ) {
-						$('btn-recache').addClass('behind');
-					}
-				}
-			}, 500);
-		});
-	},
+	}, // addListeners()
+
 	propagateNewCSS: function(updatedHosts) {
 		chrome.storage.local.get(['disabled'], function(items) {
 			var disabled = items.disabled || {};
+			var sites = sites = rweb.ui.settings();
+			var counter = {};
+
 			chrome.tabs.query({active: false}, function(tabs) {
 				tabs.forEach(function(tab) {
 					var a = document.createElement('a');
 					a.href = tab.url;
 					var host = rweb.host(a.host);
+
 					if ( !disabled[host] && rweb.hostMatch(updatedHosts, host) ) {
-						var sites = sites = rweb.ui.settings(),
-							matches = rweb.hostFilter(sites, host),
+						var matches = rweb.hostFilter(sites, host),
 							css = '';
 						matches.forEach(function(site) {
 							css += site.css.trim() + "\n\n";
 						});
-						console.time('[RWeb] Propagated new CSS to "' + host + '"');
+
+						counter[host] = (counter[host] || 0) + 1;
+						var count = counter[host];
+
+						console.time('[RWeb] Propagated new CSS to "' + host + '" (' + count + ')');
 						chrome.tabs.sendMessage(tab.id, {cssUpdate: css}, function(rsp) {
-							console.timeEnd('[RWeb] Propagated new CSS to "' + host + '"');
+							console.timeEnd('[RWeb] Propagated new CSS to "' + host + '" (' + count + ')');
 						});
 					}
 				});
 			});
 		});
+	},
+
+	import: function(newSites) {
+		// Validate import
+		if ( newSites instanceof Array ) {
+			newSites = newSites.filter(rweb.ui.siteFilter);
+			if ( newSites.length ) {
+				return rweb.sitesByUUID(function(existingSites, existingSitesList) {
+					var add = [],
+						update = [];
+					newSites.forEach(function(site) {
+						if ( !site.id || !existingSites[site.id] ) {
+							site.id || (site.id = rweb.uuid());
+							add.push(site);
+							return;
+						}
+
+						var oldSite = rweb.unify(existingSites[site.id]);
+						var newSite = rweb.unify(site);
+						if ( !rweb.ui.equal(oldSite, newSite) ) {
+							r.merge(existingSites[site.id], site);
+							update.push(site.host);
+						}
+					});
+
+					// Print detailed log before asking confirmation
+					console.log("\n\n==== IMPORT LOG ====");
+					console.log("TO ADD:\n" + add.map(function(site) {
+						return ' - ' + site.host;
+					}).join("\n"));
+					console.log("TO UPDATE:\n" + update.map(function(host) {
+						return ' - ' + host;
+					}).join("\n"));
+					console.log("==== IMPORT LOG ====\n\n");
+
+					// Summarize & confirm
+					var message = [
+						"Import summary:",
+						([
+							newSites.length + " sites were detected",
+							add.length + " sites will be added",
+							update.length + " sites will be updated",
+						]).join("\n"),
+						"(the console contains a more detailed log)",
+						"Do you agree?",
+					];
+					if ( confirm(message.join("\n\n")) ) {
+						add.forEach(function(site) {
+							existingSitesList.push(site);
+						});
+						rweb.saveSites(existingSitesList, function() {
+							location.reload();
+						});
+					}
+				});
+			}
+			return alert('No valid sites found');
+		}
+		return alert('Not an array of sites');
+	},
+
+	connect: function(callback) {
+		// alert('Connecting to Google Drive for data storage...');
+		chrome.identity.getAuthToken({interactive: true}, function(token) {
+			callback(token);
+		});
+	},
+	download: function() {
+		var handler = function(sites) {
+			chrome.storage.local.set({lastDownload: Date.now()}, function() {
+				console.log('Saved `lastDownload.');
+			});
+
+			console.log('Downloaded sites', sites);
+			rweb.ui.import(sites);
+		};
+
+		rweb.ui.connect(function(token) {
+			rweb.ui.drive.list(token, function(rsp) {
+				// File exists, download data
+				if ( rsp.items.length ) {
+					var file = rsp.items[0];
+					rweb.ui.drive.download(token, file, function(data) {
+						// Usable data
+						if ( data ) {
+							handler(data);
+						}
+						// No data, or corrupt
+						else {
+							rweb.ui.drive.upload(token, file.id, function(data) {
+								handler(data);
+							});
+						}
+					});
+				}
+				// File doesn't exist, create and upload
+				else {
+					rweb.ui.drive.create(token, function(file) {
+						rweb.ui.drive.upload(token, file.id, function(data) {
+							handler(data);
+						});
+					});
+				}
+			}); // drive.list()
+		}); // connect()
+	},
+	upload: function() {
+		var upload = function(token, file) {
+			rweb.ui.drive.upload(token, file.id, function(data) {
+				chrome.storage.local.set({lastUpload: Date.now()}, function() {
+					console.log('Saved `lastUpload.');
+					alert('Uploaded!');
+				});
+			});
+		};
+
+		rweb.ui.connect(function(token) {
+			rweb.ui.drive.list(token, function(rsp) {
+				// File exists, overwrite
+				if ( rsp.items.length ) {
+					var file = rsp.items[0];
+					upload(token, file);
+				}
+				// File doesn't exist, create & upload
+				else {
+					rweb.ui.drive.create(token, function(file) {
+						upload(token, file);
+					});
+				}
+			}); // drive.list()
+		}); // connect()
+	},
+	drive: {
+		wrapLoad: function(type, body) {
+			return function(e) {
+				var status = parseFloat(this.getResponseHeader('status'));
+console.debug(type + ':status', status);
+
+				// Unauthorized
+				if ( status == 401 ) {
+					rweb.ui.connect(function(token) {
+						chrome.identity.removeCachedAuthToken({token: token}, function() {
+							alert("Authentication error during '" + type + "'. Try again after this reload.");
+							location.reload();
+						});
+					});
+				}
+				// Success
+				else if ( status == 200 ) {
+					body.call(this, e);
+				}
+				// Any error
+				else {
+					console.error('RESPONSE:', this.responseText);
+					alert("Unrecoverable error during '" + type + "'. Check console for details.");
+				}
+			};
+		},
+		wrapCallback: function(type, callback) {
+			return rweb.ui.drive.wrapLoad(type, function(e) {
+console.debug(type + ':load', this, e);
+				var rsp = JSON.parse(this.responseText);
+console.debug(type + ':data', rsp);
+				callback(rsp);
+			});
+		},
+		wrapError: function(type) {
+			return function(e) {
+				console.warn(type + ':error', this, e);
+				alert('There was an error connecting to Drive. Check the console.');
+			};
+		},
+		list: function(token, callback) {
+			var xhr = new XMLHttpRequest;
+			xhr.open('GET', 'https://www.googleapis.com/drive/v2/files', true);
+			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+			xhr.onload = rweb.ui.drive.wrapCallback('list', callback);
+			xhr.onerror = rweb.ui.drive.wrapError('list');
+			xhr.send();
+		},
+		create: function(token, callback) {
+			var xhr = new XMLHttpRequest;
+			xhr.open('POST', 'https://www.googleapis.com/drive/v2/files', true);
+			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.onload = rweb.ui.drive.wrapCallback('create', callback);
+			xhr.onerror = rweb.ui.drive.wrapError('create');
+
+			var data = {
+				"title": "rweb.sites.json",
+				"mimeType": "text/json",
+				"description": "All RWeb configured sites for " + chrome.runtime.id,
+			};
+			xhr.send(JSON.stringify(data));
+		},
+		upload: function(token, fileId, callback) {
+			var xhr = new XMLHttpRequest;
+			xhr.open('PUT', 'https://www.googleapis.com/upload/drive/v2/files/' + fileId, true);
+			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.onload = rweb.ui.drive.wrapCallback('upload', callback);
+			xhr.onerror = rweb.ui.drive.wrapError('upload');
+
+			var sites = rweb.ui.settings(false);
+console.debug('upload:output', sites);
+			xhr.send(JSON.stringify(sites));
+		},
+		download: function(token, file, callback) {
+			var xhr = new XMLHttpRequest;
+			xhr.open('GET', file.downloadUrl, true);
+			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+			xhr.onload = rweb.ui.drive.wrapLoad('download', function(e) {
+console.debug('download:load', this, e);
+				if ( !this.responseText ) {
+					return callback(false);
+				}
+
+				try {
+					var data = JSON.parse(this.responseText);
+					callback(data);
+				}
+				catch (ex) {
+					return callback(false);
+				}
+			});
+			xhr.onerror = rweb.ui.drive.wrapError('download');
+			xhr.send();
+		}
 	}
 };
 
@@ -669,10 +768,9 @@ document.body.onload = function() {
 	});
 
 	// Apply local styling
-	rweb.sites('::', function(sites) {
-		sites.forEach(function(site) {
-			rweb.css(site, true);
-			rweb.js(site, true);
-		});
+	rweb.site('options', function(site) {
+		if ( site ) {
+			site.css && rweb.css(site.css);
+		}
 	});
 };

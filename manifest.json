@@ -2,8 +2,9 @@
 	"name": "RWeb",
 	"description": "Simple tool for customizing websites by adding your own CSS & JS.",
 	"version": "1.10",
+	"key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC1FCajQz8TcEsVum4AKd7bAfyjJSj9F7FuNFZIm1KTb5aVRIbUDD9joB3BZUzYzmW5BdkdYIaRMTP2bAramq9ep2eUHF3YbAPC24BrEbEKGnuPQDyHgN5pL/VFSzpYNA8Q9DfhzG10xpcNCivOdmLlA9fB4ugBpKhHntcZOrsCvQIDAQAB",
 
-	"permissions": [ "storage", "tabs", "contextMenus" ],
+	"permissions": [ "storage", "tabs", "contextMenus", "identity" ],
 
 	"options_page": "options/options.html",
 	"content_scripts": [
@@ -18,11 +19,21 @@
 		"scripts": [ "helpers.js", "background.js" ]
 	},
 	"browser_action": {
-		"default_title": "Edit custom CSS/JS",
+		"default_title": "RWeb - Edit custom CSS/JS",
 		"default_icon": {
 			"38": "images/38x38.png",
 			"19": "images/19x19.png"
 		}
+	},
+
+	"oauth2": {
+		"dev_client_id": "346127871184-hi1jj6g6btohao07msv0fub3dl74lfei.apps.googleusercontent.com",
+		"live_client_id": "559705211499-5c5ul38obg7epc9n71626dqavikoiuvj.apps.googleusercontent.com",
+
+		"client_id": "346127871184-hi1jj6g6btohao07msv0fub3dl74lfei.apps.googleusercontent.com",
+		"scopes": [
+			"https://www.googleapis.com/auth/drive.file"
+		]
 	},
 
 	"icons": {

@@ -1,7 +1,18 @@
 
 rweb = {
-	USABLE_ONLINE_STORAGE: .85,
-	CONTENT_CACHE_TTL: 300,
+	MUST_DOWNLOAD_EVERY_N_MINUTES: 30,
+
+	// MUST KEEP THIS UP TO DATE //
+	unify: function(site) {
+		// In order of ABC
+		return {
+			css: site.css || '',
+			host: site.host.trim(),
+			id: site.id,
+			js: site.js || '',
+		};
+	},
+	// MUST KEEP THIS UP TO DATE //
 
 	uuid: function() {
 		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -25,66 +36,18 @@ rweb = {
 		});
 	},
 
-	matched: function(host, site, callback) {
-		if ( site ) {
-			chrome.storage.local.get('history', function(items) {
-				var history = items.history || {};
-				history[host] = (history[host] || 0) + 1;
-				chrome.storage.local.set({history: history}, function() {
-					callback && callback();
-				});
+	matched: function(host, callback) {
+		chrome.storage.local.get('history', function(items) {
+			var history = items.history || {};
+			history[host] = (history[host] || 0) + 1;
+			chrome.storage.local.set({history: history}, function() {
+				callback && callback();
 			});
-		}
+		});
 	},
 
 	saveSites: function(sites, callback) {
-		var offline = [], online = [];
-		sites.forEach(function(site) {
-			site.sync ? online.push(site) : offline.push(site);
-		});
-// console.debug('offline', JSON.stringify(offline).length, 'online', JSON.stringify(online).length);
-
-		var saved = 0,
-			requireSaves = 2,
-			cbProxy = function() {
-// console.debug('Saved', saved+1);
-				if ( ++saved == requireSaves ) {
-					callback();
-				}
-			};
-
-		// Save offline
-		var data = {sites: offline};
-		online.length && (data.onlineSites = online); // Only overwrite online if it's not empty.
-		chrome.storage.local.set({sites: offline, onlineSites: online}, cbProxy);
-
-		// Save online
-		chrome.storage.sync.get('chunks', function(items) {
-			var data = JSON.stringify(online),
-				chunkSize = chrome.storage.sync.QUOTA_BYTES_PER_ITEM * rweb.USABLE_ONLINE_STORAGE,
-				chunks = {chunks: 0};
-
-			while ( data ) {
-				chunks[chunks.chunks++] = data.substr(0, chunkSize);
-				data = data.substr(chunkSize);
-			}
-// console.debug('Sync save', chunks);
-
-			// Remove unused upstream keys
-			if ( items.chunks ) {
-				var remove = [];
-				for ( var i=chunks.chunks; i<items.chunks; i++ ) {
-					remove.push(String(i));
-				}
-// console.debug('Sync remove', remove);
-				if ( remove.length ) {
-					requireSaves++;
-					chrome.storage.sync.remove(remove, cbProxy);
-				}
-			}
-
-			chrome.storage.sync.set(chunks, cbProxy);
-		});
+		chrome.storage.local.set({sites: sites, lastSave: Date.now()}, callback);
 	},
 	hostMatch: function(hosts, host) {
 		return hosts.replace(/\s+/g, '').split(',').indexOf(host) != -1;
@@ -92,152 +55,50 @@ rweb = {
 	hostFilter: function(sites, host, enabled) {
 		enabled == null && (enabled = true);
 		return sites.filter(function(site) {
-			return ( !enabled || site.enabled ) && site.host.split(',').indexOf(host) != -1;
+			if ( !enabled || site.enabled ) {
+				if ( site.host == '*' || site.host.split(',').indexOf(host) != -1 ) {
+					return true;
+				}
+			}
 		});
 	},
-	cached: function(host, callback, checkDisabled) {
-		host || (host = '');
-console.time('[RWeb] Fetched (cached) sites for "' + host + '"');
-		var key = 'cache__' + host;
-		chrome.storage.local.get([key, 'disabled', 'extendNodeList', 'alwaysOutline'], function(items) {
-			var options = {
-				extendNodeList: parseFloat(items.extendNodeList),
-				alwaysOutline: parseFloat(items.alwaysOutline),
-			};
+	sites: function(host, callback) {
+console.log('rweb.sites()');
+		// Get OFFLINE
+		chrome.storage.local.get(['sites', 'disabled'], function(items) {
+			var disabled = host && items.disabled && items.disabled[host];
+			var sites = items.sites || [];
 
-			if ( items.disabled && items.disabled[host] ) {
-				callback(null, true, options);
-				console.warn('[RWeb] RWeb was explicitly disabled for "' + host + '".');
-// console.timeEnd('[RWeb] Fetched (cached) sites for "' + host + '"');
-				return;
+			// If this is a query, don't bother sorting, but filter
+			if ( host ) {
+				sites = rweb.hostFilter(sites, host, true);
+			}
+			// No query, so sort and no filter
+			else {
+				sites.sort(function(a, b) {
+					return a.host < b.host ? 1 : -1;
+				});
 			}
 
-			var site = items[key] || false;
-console.timeEnd('[RWeb] Fetched (cached) sites for "' + host + '"');
-			callback(site, false, options);
+console.log('sites ("' + (host || '') + '")', sites.length, sites);
+			callback(sites, disabled);
 		});
 	},
-	sites: function(host, callback, checkDisabled) {
-		host || (host = '');
-console.time('[RWeb] Fetched sites for "' + host + '"');
-		var saved = 0,
-			requireSaves = 2,
-			cbProxy = function() {
-				if ( ++saved == requireSaves ) {
-					// All sites, online & offline have been fetched
 
-					if ( checkDisabled && disabled[host] ) {
-						callback([], true);
-						console.warn('[RWeb] RWeb was explicitly disabled for this host', host);
-console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
-						return;
-					}
+	site: function(host, callback, connect) {
+		rweb.sites(host, function(sites, disabled) {
+			if ( !sites.length ) {
+				return callback(false, disabled);
+			}
 
-					// If this is a query, don't bother sorting, but filter
-					if ( host ) {
-						var matches = []
-						sites.forEach(function(site) {
-							if ( site.enabled && site.host.split(',').indexOf(host) != -1 ) {
-								matches.push(site);
-							}
-						});
-						sites = matches;
-					}
-					// No query, so sort and no filter
-					else {
-						sites.sort(function(a, b) {
-							return a.host < b.host ? 1 : -1;
-						});
-					}
-
-console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
-					callback(sites, false);
-				}
-			},
-			onlineData = '',
-			sites = [],
-			disabled;
-
-		function addSites(source) {
-// console.debug('addSites', source.length);
-			source.forEach(function(site) {
-				sites.push(site);
+			var css = '', js = '';
+			sites.forEach(function(site) {
+				css += "\n" + site.css;
+				js += "\n" + site.js;
 			});
 
-			// Added another batch of sites, maybe all of them
-			cbProxy();
-		}
-
-		function parseOnlineData(json) {
-// console.debug('json', json.length);
-			try {
-				var data = JSON.parse(json);
-// console.debug('data', data);
-
-				// Online data isn't namespaced into 'sites', like unencoded offline data
-				addSites(data);
-			}
-			catch (ex) {
-				console.warn("ERROR decoding online sites. Discarding all of it. I hope you have a back-up!", ex);
-				cbProxy();
-			}
-		}
-
-		// Get ONLINE
-// console.time('chrome.storage.sync.get');
-		chrome.storage.sync.get(['chunks', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14'], function(items) {
-// console.timeEnd('chrome.storage.sync.get');
-			if ( items.chunks ) {
-				// Append JSON data
-				var loadMore = [];
-				for ( var i=0; i<items.chunks; i++ ) {
-					if ( i in items ) {
-						onlineData += items[i];
-					}
-					else {
-						loadMore.push(String(i));
-					}
-				}
-// console.debug('onlineData', onlineData.length);
-// console.debug('loadMore', loadMore);
-
-				if ( loadMore.length ) {
-// console.time('chrome.storage.sync.get');
-					chrome.storage.sync.get(loadMore, function(items) {
-// console.timeEnd('chrome.storage.sync.get');
-						loadMore.forEach(function(index) {
-							onlineData += items[index];
-						});
-// console.debug('onlineData', onlineData.length);
-
-						// onlineData should be complete
-						parseOnlineData(onlineData);
-					});
-				}
-				else {
-					// onlineData should be complete
-					parseOnlineData(onlineData);
-				}
-			}
-			else {
-				// No sites in online storage, so skip parsing etc, straight to callback proxy
-				cbProxy();
-			}
-		});
-
-		// Get OFFLINE
-// console.time('chrome.storage.local.get');
-		chrome.storage.local.get(['sites', 'disabled'], function(items) {
-// console.timeEnd('chrome.storage.local.get');
-			disabled = items.disabled || {};
-// console.debug('offline sites', items.sites);
-			if ( items.sites ) {
-				addSites(items.sites);
-			}
-			else {
-				// No sites in offline storage, so straight to callback proxy
-				cbProxy();
-			}
+			var site = {css: css.trim(), js: js.trim()};
+			callback(site, disabled);
 		});
 	},
 
@@ -261,13 +122,10 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 		});
 	},
 
-	css: function(site, options) {
+	css: function(css) {
 		var attachTo = document.head || document.body || document.documentElement;
 		if ( attachTo ) {
-			var css = site.css.trim();
-			if ( options.alwaysOutline ) {
-				css += "\n\n:focus { outline: -webkit-focus-ring-color auto 5px !important; }";
-			}
+			var css = css.trim();
 
 			var el = document.createElement('style');
 			el.dataset.origin = 'rweb';
@@ -276,21 +134,20 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 			rweb.insert(attachTo, el);
 		}
 	},
-	js: function(site, options) {
+	js: function(js) {
 		var attachTo = document.head || document.body || document.documentElement;
-		if ( site.js && attachTo && location.protocol != 'chrome-extension:' ) {
+		if ( attachTo ) {
 			var el = document.createElement('script');
 			el.dataset.origin = 'rweb';
 
-			var js = '(function() {';
-			if ( options.extendNodeList ) {
-				js += "['forEach', 'slice', 'filter', 'map', 'indexOf'].forEach(function(method) { HTMLCollection.prototype[method] = NodeList.prototype[method] = Array.prototype[method]; });";
-			}
-			js += "var ready = function(cb) { document.readyState == 'interactive' ? cb() : document.addEventListener('DOMContentLoaded', cb); }\n";
-			js += "var load = function(cb) { document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true); }\n";
-			js += site.js;
-			js += "})();\n";
-
+			js =
+				'(function() {\n\n' +
+				"var ready = function(cb) { document.readyState == 'interactive' ? cb() : document.addEventListener('DOMContentLoaded', cb); };\n" +
+				"var load = function(cb) { document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true); };\n" +
+				"\n\n" +
+				js + "\n" +
+				"\n\n" +
+				"})();\n";
 			el.textContent = js;
 
 			rweb.insert(attachTo, el);
@@ -315,55 +172,5 @@ console.timeEnd('[RWeb] Fetched sites for "' + host + '"');
 		}
 
 		return String(Math.round(num)).split('').reverse().join('').match(/.{1,3}/g).join(',').split('').reverse().join('');
-	},
-	recache: function(callback) {
-console.time('[RWeb] Re-cached all sites into local');
-		chrome.storage.local.get(null, function(items) {
-			var cidPrefix = 'cache__';
-			var remove = {};
-			Object.keys(items).forEach(function(key) {
-				if ( key.indexOf(cidPrefix) === 0 ) {
-					remove[key] = 1;
-				}
-			});
-// console.debug('remove', remove);
-
-			var cache = {};
-			rweb.sites(null, function(sites) {
-				sites.forEach(function(site) {
-					if ( site.enabled ) {
-						site.host.split(',').forEach(function(host) {
-							var cid = cidPrefix + host;
-							cache[cid] || (cache[cid] = {js: '', css: ''});
-
-							cache[cid].css = (cache[cid].css + "\n\n" + site.css.trim()).trim();
-							cache[cid].js = (cache[cid].js + "\n\n" + site.js.trim()).trim();
-
-							delete remove[cid];
-						});
-					}
-				});
-// console.debug('cache', cache);
-// console.debug('remove', remove);
-
-				var todo = 2,
-					done = function() {
-						if ( --todo == 0 ) {
-console.timeEnd('[RWeb] Re-cached all sites into local');
-							callback && callback();
-						}
-					};
-
-				chrome.storage.local.remove(Object.keys(remove), done);
-				cache['lastReCache'] = Date.now();
-				chrome.storage.local.set(cache, done);
-			});
-		});
 	}
 };
-
-// rweb.Sites = function Sites() {
-	// localStorage.constructor.call(this);
-// };
-// rweb.Sites.prototype = Object.create(Storage.prototype);
-// rweb.Sites.prototype.constructor = rweb.Sites;

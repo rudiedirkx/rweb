@@ -1,23 +1,27 @@
 
-var host = rweb.host(location.host);
-rweb.cached(host, function(site, disabled, options) {
-	options.alwaysOutline = options.alwaysOutline == 2 || (site && options.alwaysOutline == 1);
+/**
+ * Load sites and inject CSS & JS
+ */
 
-	// Save local stats
-	rweb.matched(host, site);
+if ( document.documentElement && document.documentElement.nodeName == 'HTML' && location.protocol != 'chrome-extension:' ) {
+	var host = rweb.host(location.host);
+	rweb.site(host, function(site, disabled) {
+		if ( site ) {
+			// Save stats
+			rweb.matched(host);
 
-	// Update browser action
-	chrome.runtime.sendMessage({site: site, host: host});
+			// Add CSS & JS
+			site.css && rweb.css(site.css);
+			site.js && rweb.js(site.js);
+		}
+	});
+}
 
-	// Add CSS & JS
-	if ( site ) {
-		rweb.css(site, options);
-		rweb.js(site, options);
-	}
-	else if ( options.alwaysOutline ) {
-		rweb.css({css: ''}, options);
-	}
-}, true);
+
+
+/**
+ * Listen for disabling this host/website
+ */
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if ( msg.rweb && 'disabled' in msg.rweb ) {
@@ -46,20 +50,21 @@ function xableLocalRWebCSS(disabled) {
 	});
 }
 
+
+
+/**
+ * Listen for CSS updates from the options page
+ */
+
 function doCSSUpdate(css) {
 	console.debug('[RWeb] Updating CSS:', rweb.thousands(css.length) + ' bytes');
 
-	chrome.storage.local.get('alwaysOutline', function(options) {
-		options.alwaysOutline = parseFloat(options.alwaysOutline);
+	// Delete existing style[data-origin="rweb"]
+	var el = document.querySelector('style[data-origin="rweb"]');
+	el && el.remove();
 
-		// Delete all existing style[data-origin="rweb"]
-		[].forEach.call(document.querySelectorAll('style[data-origin="rweb"]'), function(el) {
-			el.remove();
-		});
-
-		// Create 1 new style[data-origin="rweb"]
-		rweb.css({css: css}, options);
-	});
+	// Create 1 new style[data-origin="rweb"]
+	rweb.css(css);
 }
 
 chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
