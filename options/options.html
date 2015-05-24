@@ -29,13 +29,18 @@ Will still take up space when disabled.">
 				</td>
 				<td class="content">
 					<input name="id" type="hidden" />
-					<input name="host" class="host el-host" placeholder="Hosts / domains. Use comma to separate more. Use * for all websites. Use 'options' to target this page." />
+					<div class="relative">
+						<input name="host" class="host el-host" placeholder="Hosts / domains. Use comma to separate more. Use * for all websites. Use 'options' to target this page." />
+						<span hidden class="el-metadata">(CSS: <span class="el-meta-css">0 kb</span>, JS: <span class="el-meta-js">0 kb</span>, matched: <span class="el-meta-matched">0</span>x)</span>
+					</div>
 				</td>
 			</tr>
 			<tr>
 				<th>CSS</th>
 				<td class="content">
-					<textarea name="css" rows="4" class="code expands css el-css"></textarea>
+					<textarea name="css" rows="4" class="code expands css el-css" placeholder="body, p {
+	line-height: 1.4; /* px line-height are evil! */
+}"></textarea>
 				</td>
 			</tr>
 			<tr>
@@ -112,6 +117,13 @@ platform.twitter.com"></textarea><br>
 				<option value="%09">Yes, tabs</option>
 				<option value="%20%20">Yes, 2 spaces</option>
 				<option value="%20%20%20%20">Yes, 4 spaces</option>
+			</select>
+		</span>
+		<span class="pref">
+			Inline stats:
+			<select name="inlineStats">
+				<option value="0">No</option>
+				<option value="1">Yes</option>
 			</select>
 		</span>
 		<input type="submit" value="Save" />

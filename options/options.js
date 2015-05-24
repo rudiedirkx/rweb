@@ -328,6 +328,88 @@ console.log(updatedHosts.value);
 
 
 		/**
+		 * SITE META DATA
+		 */
+
+		var history;
+
+		function updateMetaDataLocation($site, which) {
+			var $label = $site.getElement('.el-metadata');
+
+			// Update label position
+			if ( !which || which == 'position' ) {
+				var $host = $site.getElement('.el-host');
+				if ( $host.value == '' ) {
+					$label.css('left', '100%');
+				}
+				else {
+					var tmp = document.el('span').addClass('tmp-site-host-width').setText($host.value);
+					document.body.append(tmp);
+					setTimeout(function() {
+						var width = tmp.offsetWidth;
+						tmp.remove();
+
+						if ( parseFloat($label.css('left')) != width ) {
+							$label.css('left', width + 'px');
+						}
+					});
+				}
+			}
+
+			if ( !which || which == 'css' ) {
+				var $css = $site.getElement('.el-css');
+				var b = $css.value.length;
+				$label.getElement('.el-meta-css').setText(b ? rweb.thousands(b) : '0');
+			}
+
+			if ( !which || which == 'js' ) {
+				var $js = $site.getElement('.el-js');
+				var b = $js.value.length;
+				$label.getElement('.el-meta-js').setText(b ? rweb.thousands(b) : '0');
+			}
+
+			if ( !which ) {
+				$label.hidden = false;
+
+				var $host = $site.getElement('.el-host');
+				$label.getElement('.el-meta-matched').setText(rweb.thousands(history[$host.value] || 0, true));
+			}
+		}
+
+		function tickUpdateMetaDataLocation() {
+			var el = document.activeElement;
+			if ( el.hasClass('el-host') ) {
+				var $site = el.ancestor('tbody');
+				updateMetaDataLocation($site, 'position');
+			}
+			else if ( el.hasClass('el-css') ) {
+				var $site = el.ancestor('tbody');
+				updateMetaDataLocation($site, 'css');
+			}
+			else if ( el.hasClass('el-js') ) {
+				var $site = el.ancestor('tbody');
+				updateMetaDataLocation($site, 'js');
+			}
+
+			requestAnimationFrame(tickUpdateMetaDataLocation);
+		}
+
+		rweb.ui.getPrefs(function(items) {
+			if ( items.inlineStats ) {
+				requestAnimationFrame(tickUpdateMetaDataLocation);
+				chrome.storage.local.get('history', function(items) {
+					history = items.history || {};
+
+					$sites.getElements('tbody').forEach(function($site) {
+						updateMetaDataLocation($site);
+					});
+				});
+			}
+		});
+
+
+
+		/**
 		 * UPLOAD & DOWNLOAD
 		 */
 

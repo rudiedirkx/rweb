@@ -181,7 +181,7 @@ rweb = {
 	},
 
 	thousands: function(num, nokilo) {
-		if ( !nokilo && num > 5000 ) {
+		if ( !nokilo && num > 1100 ) {
 			return rweb.thousands(num/1000, true) + ' k';
 		}
 

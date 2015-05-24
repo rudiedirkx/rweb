@@ -1,6 +1,7 @@
 
 * {
 	box-sizing: border-box;
+	font-family: sans-serif;
 }
 html {
 	background: #eee;
@@ -18,6 +19,9 @@ select {
 	border: solid 1px #bbb;
 	color: inherit;
 	cursor: default;
+}
+textarea {
+	font-family: monospace;
 }
 #sites input:not([type=submit]):not([type=button]):not([type=reset]),
 #sites textarea,
@@ -188,4 +192,27 @@ form:not(.saved) .saved {
 #ta-import,
 #ta-disabled {
 	width: 100%;
+}
+
+
+
+html {
+	overflow-x: hidden;
+}
+.relative {
+	position: relative;
+}
+#sites .el-metadata {
+	position: absolute;
+	top: 0;
+	left: 0;
+	pointer-events: none;
+	margin-left: 30px;
+	line-height: calc(1em + 30px);
+	opacity: 0.4;
+	white-space: nowrap;
+}
+.tmp-site-host-width {
+	display: inline-block;
+	font-family: Arial;
 }
