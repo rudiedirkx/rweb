@@ -395,7 +395,7 @@ console.log(updatedHosts.value);
 		}
 
 		rweb.ui.getPrefs(function(items) {
-			if ( items.inlineStats ) {
+			if ( items.inlineStats && parseInt(items.inlineStats) ) {
 				requestAnimationFrame(tickUpdateMetaDataLocation);
 				chrome.storage.local.get('history', function(items) {
 					history = items.history || {};
