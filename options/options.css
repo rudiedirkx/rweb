@@ -153,7 +153,7 @@ p[data-notifid].read {
 
 
 .actions #btn-upload.dirty {
-	box-shadow: 0 0 5px red;
+	box-shadow: 0 0 5px orange;
 }
 .actions #btn-download.behind {
 	box-shadow: 0 0 5px red;

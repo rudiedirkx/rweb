@@ -489,7 +489,11 @@ console.log(updatedHosts.value);
 				return alert('Invalid code:\n\n' + ex);
 			}
 
-			rweb.sync.import(newSites);
+			rweb.sync.import(newSites, function(imported) {
+				if ( imported ) {
+					location.reload();
+				}
+			});
 		});
 
 
