@@ -126,7 +126,10 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 	open(uri);
 });
 
-chrome.runtime.onMessage.addListener(function(msg, sender) {
+var optionsClosedTimer;
+
+chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+	// Content script matched site
 	if ( msg && msg.site ) {
 		chrome.browserAction.getBadgeText({tabId: sender.tab.id}, function(text) {
 			var num = (parseFloat(text) || 0) + 1;
@@ -140,5 +143,29 @@ chrome.runtime.onMessage.addListener(function(msg, sender) {
 			color: '#000',
 			tabId: sender.tab.id
 		});
+	}
+
+	// Forced auto-download from content script
+	if ( msg && msg.forceAutoDownload ) {
+		rweb.sync.download(function(imported) {
+			// This one doesn't reach the content script for some reason... Too async?
+			sendResponse({imported: imported});
+		}, true);
+	}
+
+	// Options page closed
+	if ( msg && msg.optionsClosed ) {
+		optionsClosedTimer = setTimeout(function() {
+			console.log('Uploading automatically, because options page closed');
+			rweb.sync.upload(function() {
+				// Done
+				console.log('Automatic upload done');
+			}, true);
+		}, 1000);
+	}
+
+	// Options page opened
+	if ( msg && msg.optionsOpened ) {
+		clearTimeout(optionsClosedTimer);
 	}
 });

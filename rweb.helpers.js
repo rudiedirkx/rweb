@@ -12,7 +12,14 @@ rweb = {
 			js: site.js || '',
 		};
 	},
+	siteFilter: function(site) {
+		return site.host.trim() && ( site.js || site.css );
+	},
 	// MUST KEEP THIS UP TO DATE //
+
+	equal: function(site1, site2) {
+		return JSON.stringify(site1) == JSON.stringify(site2);
+	},
 
 	uuid: function() {
 		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -47,7 +54,11 @@ rweb = {
 	},
 
 	saveSites: function(sites, callback) {
-		chrome.storage.local.set({sites: sites, lastSave: Date.now()}, callback);
+		chrome.storage.local.set({
+			sites: sites,
+			lastSave: Date.now(),
+			dirty: true,
+		}, callback);
 	},
 
 	hostMatch: function(hosts, host) {
@@ -69,9 +80,15 @@ rweb = {
 
 	sites: function(host, callback, options) {
 		console.time('rweb.sites ("' + host + '")');
-		chrome.storage.local.get(['sites', 'disabled'], function(items) {
-			var disabled = host && items.disabled && items.disabled[host];
+		chrome.storage.local.get(['sites', 'disabled', 'lastDownload', 'downloadingSince'], function(items) {
+			var disabled = host && items.disabled && items.disabled[host] ? true : false;
 			var sites = items.sites || [];
+
+			var meta = {
+				disabled: disabled,
+				lastDownload: items.lastDownload || 0,
+				downloadingSince: items.downloadingSince || 0,
+			};
 
 			// If this is a query, don't bother sorting, but filter
 			if ( host ) {
@@ -84,16 +101,16 @@ rweb = {
 				});
 			}
 
-			if ( host && !disabled ) {
+			if ( host && !meta.disabled ) {
 				console.timeEnd('rweb.sites ("' + host + '")');
 			}
-			callback(sites, disabled);
+			callback(sites, meta);
 		});
 	},
 	site: function(host, callback, options) {
-		rweb.sites(host, function(sites, disabled) {
+		rweb.sites(host, function(sites, meta) {
 			if ( !sites.length ) {
-				return callback(false, disabled);
+				return callback(false, meta);
 			}
 
 			var css = '', js = '';
@@ -106,7 +123,7 @@ rweb = {
 				rweb.hostMatch(site.host, host) && specific++;
 			});
 
-			if ( !disabled ) {
+			if ( !meta.disabled ) {
 				console.debug('- sites: ' + sites.length + ', specific: ' + Number(specific) + ', wildcard: ' + Number(wildcard));
 			}
 
@@ -116,7 +133,7 @@ rweb = {
 				wildcard: wildcard,
 				specific: specific,
 			};
-			callback(site, disabled);
+			callback(site, meta);
 		}, options);
 	},
 

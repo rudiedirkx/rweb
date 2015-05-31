@@ -152,6 +152,15 @@ p[data-notifid].read {
 
 
 
+.actions #btn-upload.dirty {
+	box-shadow: 0 0 5px red;
+}
+.actions #btn-download.behind {
+	box-shadow: 0 0 5px red;
+}
+
+
+
 form.pop-out {
 	box-shadow: 0 0 10px #ccc;
 	border: solid 2px #ccc;

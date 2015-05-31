@@ -73,10 +73,6 @@ var $sites, $table, $newSite, $prefs;
 rweb.ui = {
 	_state: '',
 
-	equal: function(site1, site2) {
-		return JSON.stringify(site1) == JSON.stringify(site2);
-	},
-
 	nformat: function(n, dec) {
 		var P = Math.pow(10, dec || 0),
 			n = String(Math.round(n * P) / P);
@@ -146,6 +142,10 @@ rweb.ui = {
 			document.body.removeClass('loading');
 
 			$$('tfoot input:not([data-disabled])').attr('disabled', null);
+
+			chrome.runtime.sendMessage({optionsOpened: true}, function(response) {
+				// No relevant response
+			});
 		});
 
 		// SHOW PREFERENCES
@@ -160,9 +160,6 @@ rweb.ui = {
 	dirty: function() {
 		return rweb.ui._state != JSON.encode(rweb.ui.settings());
 	},
-	siteFilter: function(site) {
-		return site.host && ( site.js || site.css );
-	},
 	buildSites: function(callback) {
 		rweb.sites(null, function(sites) {
 			sites.each(function(site) {
@@ -173,7 +170,7 @@ rweb.ui = {
 			});
 
 			callback(sites);
-		}, rweb.ui.download);
+		});
 	},
 	openSite: function(tbody) {
 		rweb.ui.closeSites(tbody);
@@ -189,7 +186,7 @@ rweb.ui = {
 			.map(function(tb) {
 				return tb.getNamedElementValues(update);
 			})
-			.filter(rweb.ui.siteFilter)
+			.filter(rweb.siteFilter)
 		;
 	},
 	addListeners: function() {
@@ -414,11 +411,39 @@ console.log(updatedHosts.value);
 		 */
 
 		$('btn-download').on('click', function() {
-			rweb.ui.download();
+			rweb.sync.download(function(imported) {
+				// Done
+				console.log('Manual download done');
+				if ( imported ) {
+					location.reload();
+				}
+			});
 		});
 
 		$('btn-upload').on('click', function() {
-			rweb.ui.upload();
+			rweb.sync.upload(function() {
+				// Done
+				console.log('Manual upload done');
+				alert('Uploaded!');
+			});
+		});
+
+		chrome.storage.local.get(['dirty', 'lastUpload', 'lastDownload'], function(items) {
+			var uploadTitle = [];
+			if ( items.dirty ) {
+				$('btn-upload').addClass('dirty');
+				uploadTitle.push("'DIRTY' LOCAL STATE: you have local saved changes not uploaded to Drive");
+			}
+			uploadTitle.push('Last upload was: ' + (new Date(items.lastUpload)));
+			$('btn-upload').attr('title', uploadTitle.join("\n\n"));
+
+			var downloadTitle = [];
+			if ( items.lastDownload && items.lastDownload < Date.now() - rweb.MUST_DOWNLOAD_EVERY_N_MINUTES * 60000 ) {
+				$('btn-download').addClass('behind');
+				downloadTitle.push("LOCAL STATE IS BEHIND: it's been more than " + rweb.MUST_DOWNLOAD_EVERY_N_MINUTES + " minutes since auto-download");
+			}
+			downloadTitle.push('Last download was: ' + (new Date(items.lastDownload)));
+			$('btn-download').attr('title', downloadTitle.join("\n\n"));
 		});
 
 
@@ -464,7 +489,7 @@ console.log(updatedHosts.value);
 				return alert('Invalid code:\n\n' + ex);
 			}
 
-			rweb.ui.import(newSites);
+			rweb.sync.import(newSites);
 		});
 
 
@@ -554,245 +579,6 @@ console.log(updatedHosts.value);
 				});
 			});
 		});
-	},
-
-	import: function(newSites, callback) {
-		// Validate import
-		if ( newSites instanceof Array ) {
-			newSites = newSites.filter(rweb.ui.siteFilter);
-			if ( newSites.length ) {
-				return rweb.sitesByUUID(function(existingSites, existingSitesList) {
-					var add = [],
-						update = [];
-					newSites.forEach(function(site) {
-						if ( !site.id || !existingSites[site.id] ) {
-							site.id || (site.id = rweb.uuid());
-							add.push(site);
-							return;
-						}
-
-						var oldSite = rweb.unify(existingSites[site.id]);
-						var newSite = rweb.unify(site);
-						if ( !rweb.ui.equal(oldSite, newSite) ) {
-							r.merge(existingSites[site.id], site);
-							update.push(site.host);
-						}
-					});
-
-					// Print detailed log before asking confirmation
-					console.log("\n\n==== IMPORT LOG ====");
-					console.log("TO ADD:\n" + add.map(function(site) {
-						return ' - ' + site.host;
-					}).join("\n"));
-					console.log("TO UPDATE:\n" + update.map(function(host) {
-						return ' - ' + host;
-					}).join("\n"));
-					console.log("==== IMPORT LOG ====\n\n");
-
-					// Summarize & confirm
-					var message = [
-						"Import summary:",
-						([
-							newSites.length + " sites were detected",
-							add.length + " sites will be added",
-							update.length + " sites will be updated",
-						]).join("\n"),
-						"(the console contains a more detailed log)",
-						"Do you agree?",
-					];
-					if ( confirm(message.join("\n\n")) ) {
-						add.forEach(function(site) {
-							existingSitesList.push(site);
-						});
-						rweb.saveSites(existingSitesList, function() {
-							location.reload();
-						});
-
-						callback(true);
-					}
-
-					callback(false);
-				});
-			}
-
-			callback(false);
-			return alert('No valid sites found');
-		}
-
-		callback(false);
-		return alert('Not an array of sites');
-	},
-
-	connect: function(callback) {
-		// alert('Connecting to Google Drive for data storage...');
-		chrome.identity.getAuthToken({interactive: true}, function(token) {
-			callback(token);
-		});
-	},
-	download: function() {
-		var handler = function(sites) {
-			console.log('Downloaded sites', sites);
-
-			rweb.ui.import(sites, function(imported) {
-				if ( imported ) {
-					chrome.storage.local.set({lastDownload: Date.now()}, function() {
-						console.log('Saved `lastDownload.');
-					});
-				}
-			});
-		};
-
-		rweb.ui.connect(function(token) {
-			rweb.ui.drive.list(token, function(rsp) {
-				// File exists, download data
-				if ( rsp.items.length ) {
-					var file = rsp.items[0];
-					rweb.ui.drive.download(token, file, function(data) {
-						// Usable data
-						if ( data ) {
-							handler(data);
-						}
-						// No data, or corrupt
-						else {
-							rweb.ui.drive.upload(token, file.id, function(data) {
-								handler(data);
-							});
-						}
-					});
-				}
-				// File doesn't exist, create and upload
-				else {
-					rweb.ui.drive.create(token, function(file) {
-						rweb.ui.drive.upload(token, file.id, function(data) {
-							handler(data);
-						});
-					});
-				}
-			}); // drive.list()
-		}); // connect()
-	},
-	upload: function() {
-		var upload = function(token, file) {
-			rweb.ui.drive.upload(token, file.id, function(data) {
-				chrome.storage.local.set({lastUpload: Date.now()}, function() {
-					console.log('Saved `lastUpload.');
-					alert('Uploaded!');
-				});
-			});
-		};
-
-		rweb.ui.connect(function(token) {
-			rweb.ui.drive.list(token, function(rsp) {
-				// File exists, overwrite
-				if ( rsp.items.length ) {
-					var file = rsp.items[0];
-					upload(token, file);
-				}
-				// File doesn't exist, create & upload
-				else {
-					rweb.ui.drive.create(token, function(file) {
-						upload(token, file);
-					});
-				}
-			}); // drive.list()
-		}); // connect()
-	},
-	drive: {
-		wrapLoad: function(type, body) {
-			return function(e) {
-				var status = parseFloat(this.getResponseHeader('status'));
-console.debug(type + ':status', status);
-
-				// Unauthorized
-				if ( status == 401 ) {
-					rweb.ui.connect(function(token) {
-						chrome.identity.removeCachedAuthToken({token: token}, function() {
-							alert("Authentication error during '" + type + "'. Try again after this reload.");
-							location.reload();
-						});
-					});
-				}
-				// Success
-				else if ( status >= 200 && status < 400 ) {
-					body.call(this, e);
-				}
-				// Any error
-				else {
-					console.error('RESPONSE:', this.responseText);
-					alert("Unrecoverable error during '" + type + "'. Check console for details.");
-				}
-			};
-		},
-		wrapCallback: function(type, callback) {
-			return rweb.ui.drive.wrapLoad(type, function(e) {
-console.debug(type + ':load', this, e);
-				var rsp = JSON.parse(this.responseText);
-console.debug(type + ':data', rsp);
-				callback(rsp);
-			});
-		},
-		wrapError: function(type) {
-			return function(e) {
-				console.warn(type + ':error', this, e);
-				alert('There was an error connecting to Drive. Check the console.');
-			};
-		},
-		list: function(token, callback) {
-			var xhr = new XMLHttpRequest;
-			xhr.open('GET', 'https://www.googleapis.com/drive/v2/files', true);
-			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-			xhr.onload = rweb.ui.drive.wrapCallback('list', callback);
-			xhr.onerror = rweb.ui.drive.wrapError('list');
-			xhr.send();
-		},
-		create: function(token, callback) {
-			var xhr = new XMLHttpRequest;
-			xhr.open('POST', 'https://www.googleapis.com/drive/v2/files', true);
-			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-			xhr.setRequestHeader('Content-Type', 'application/json');
-			xhr.onload = rweb.ui.drive.wrapCallback('create', callback);
-			xhr.onerror = rweb.ui.drive.wrapError('create');
-
-			var data = {
-				"title": "rweb.sites.json",
-				"mimeType": "text/json",
-				"description": "All RWeb configured sites for " + chrome.runtime.id,
-			};
-			xhr.send(JSON.stringify(data));
-		},
-		upload: function(token, fileId, callback) {
-			var xhr = new XMLHttpRequest;
-			xhr.open('PUT', 'https://www.googleapis.com/upload/drive/v2/files/' + fileId, true);
-			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-			xhr.setRequestHeader('Content-Type', 'application/json');
-			xhr.onload = rweb.ui.drive.wrapCallback('upload', callback);
-			xhr.onerror = rweb.ui.drive.wrapError('upload');
-
-			var sites = rweb.ui.settings(false);
-console.debug('upload:output', sites);
-			xhr.send(JSON.stringify(sites));
-		},
-		download: function(token, file, callback) {
-			var xhr = new XMLHttpRequest;
-			xhr.open('GET', file.downloadUrl, true);
-			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-			xhr.onload = rweb.ui.drive.wrapLoad('download', function(e) {
-console.debug('download:load', this, e);
-				if ( !this.responseText ) {
-					return callback(false);
-				}
-
-				try {
-					var data = JSON.parse(this.responseText);
-					callback(data);
-				}
-				catch (ex) {
-					return callback(false);
-				}
-			});
-			xhr.onerror = rweb.ui.drive.wrapError('download');
-			xhr.send();
-		}
 	}
 };
 
@@ -857,4 +643,11 @@ document.body.onload = function() {
 			site.css && rweb.css(site.css);
 		}
 	}, {includeWildcard: false});
+
+	// Upload when closing options page
+	window.onbeforeunload = function() {
+		chrome.runtime.sendMessage({optionsClosed: true}, function(response) {
+			// This tab is gone already
+		});
+	};
 };

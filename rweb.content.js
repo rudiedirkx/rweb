@@ -5,8 +5,8 @@
 
 if ( document.documentElement && document.documentElement.nodeName == 'HTML' && location.protocol != 'chrome-extension:' ) {
 	var host = rweb.host(location.host);
-	rweb.site(host, function(site, disabled) {
-		if ( site && !disabled ) {
+	rweb.site(host, function(site, meta) {
+		if ( site && !meta.disabled ) {
 			// Save stats
 			if ( site.specific ) {
 				rweb.matched(host);
@@ -15,6 +15,16 @@ if ( document.documentElement && document.documentElement.nodeName == 'HTML' && 
 			// Add CSS & JS
 			site.css && rweb.css(site.css);
 			site.js && rweb.js(site.js);
+		}
+
+		if ( !meta.lastDownload || meta.lastDownload < Date.now() - rweb.MUST_DOWNLOAD_EVERY_N_MINUTES * 60000 ) {
+			if ( !meta.downloadingSince || meta.downloadingSince < Date.now() - 10000 ) {
+				console.log('WILL START AUTO-DOWNLOAD NOW! See background script for log.');
+				chrome.runtime.sendMessage({forceAutoDownload: true}, function(response) {
+					// Never reaches here, because sendResponse in bg script doesn't work!?
+					console.log('DOWNLOADED SITES!');
+				});
+			}
 		}
 	});
 }
