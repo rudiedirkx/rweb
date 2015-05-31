@@ -30,7 +30,7 @@ Will still take up space when disabled.">
 				<td class="content">
 					<input name="id" type="hidden" />
 					<div class="relative">
-						<input name="host" class="host el-host" placeholder="Hosts / domains. Use comma to separate more. Use * for all websites. Use 'options' to target this page." />
+						<input name="host" class="host el-host" placeholder="Hosts / domains. Without WWW! Use comma to separate more. Use * for all websites. Use 'options' to target this page." />
 						<span hidden class="el-metadata">(CSS: <span class="el-meta-css">0 kb</span>, JS: <span class="el-meta-js">0 kb</span>, matched: <span class="el-meta-matched">0</span>x)</span>
 					</div>
 				</td>
@@ -75,6 +75,8 @@ load(function() {
 					&nbsp;
 					<input type="button" value="DOWNLOAD" id="btn-download" disabled title="Manually download sites from your GDrive." />
 					<input type="button" value="UPLOAD" id="btn-upload" disabled title="Manually upload sites to your GDrive." />
+					&nbsp;
+					<input type="button" value="Sync log" id="btn-sync-log" disabled />
 				</td>
 			</tr>
 		</tfoot>
@@ -99,6 +101,11 @@ load(function() {
 platform.twitter.com"></textarea><br>
 	<input type="submit" value="Save" />
 	<span class="saved">Saved!</span>
+</form>
+
+<form class="pop-out" id="form-sync-log" style="display: none">
+	<h2>Sync log</h2>
+	<textarea rows="6" id="ta-sync-log"></textarea>
 </form>
 
 <form id="prefs">

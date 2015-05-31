@@ -415,13 +415,19 @@ console.log(updatedHosts.value);
 				// Done
 				console.log('Manual download done');
 				if ( imported ) {
-					location.reload();
+					rweb.log('download', false, function() {
+						location.reload();
+					});
 				}
 			});
 		});
 
 		$('btn-upload').on('click', function() {
 			rweb.sync.upload(function() {
+				rweb.log('upload', false, function() {
+					// Log saved
+				});
+
 				// Done
 				console.log('Manual upload done');
 				alert('Uploaded!');
@@ -444,6 +450,39 @@ console.log(updatedHosts.value);
 			}
 			downloadTitle.push('Last download was: ' + (new Date(items.lastDownload)));
 			$('btn-download').attr('title', downloadTitle.join("\n\n"));
+		});
+
+
+
+		/**
+		 * EXPORT
+		 */
+
+		$('btn-sync-log').on('click', function(e) {
+			var $form = $('form-sync-log');
+			if ( $form.toggle() ) {
+				var $ta = $('ta-sync-log');
+				chrome.storage.local.get(['log'], function(items) {
+					var logs = items.log || [];
+
+					var rpad = function(str, len) {
+						for (var i=str.length; i<len; i++) {
+							str += ' ';
+						}
+						return str;
+					};
+
+					var lines = [];
+					logs.forEach(function(log) {
+						lines.push(
+							rpad(log.type, 10) +
+							rpad(log.automatic ? 'automatic' : 'manual', 11) +
+							String(new Date(log.utc))
+						);
+					});
+					$ta.value = lines.join("\n");
+				});
+			}
 		});
 
 
@@ -491,7 +530,9 @@ console.log(updatedHosts.value);
 
 			rweb.sync.import(newSites, function(imported) {
 				if ( imported ) {
-					location.reload();
+					rweb.log('import', false, function() {
+						location.reload();
+					});
 				}
 			});
 		});

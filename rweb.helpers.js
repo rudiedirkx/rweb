@@ -157,6 +157,21 @@ rweb = {
 		});
 	},
 
+	log: function(type, automatic, callback) {
+		var log = {
+			type: type,
+			automatic: !!automatic,
+			utc: Date.now(),
+		};
+		chrome.storage.local.get(['log'], function(items) {
+			var logs = items.log || [];
+			logs.unshift(log);
+			chrome.storage.local.set({log: logs}, function() {
+				callback && callback(logs.length);
+			});
+		});
+	},
+
 	css: function(css) {
 		var attachTo = document.head || document.body || document.documentElement;
 		if ( attachTo ) {

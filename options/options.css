@@ -199,7 +199,8 @@ form:not(.saved) .saved {
 
 #ta-export,
 #ta-import,
-#ta-disabled {
+#ta-disabled,
+#ta-sync-log {
 	width: 100%;
 }
 
