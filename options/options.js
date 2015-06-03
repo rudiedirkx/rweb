@@ -410,7 +410,11 @@ console.log(updatedHosts.value);
 		 * UPLOAD & DOWNLOAD
 		 */
 
-		$('btn-download').on('click', function() {
+		$('btn-download').on('click', function(e) {
+			e.preventDefault();
+
+			var btn = this;
+			btn.addClass('loading');
 			rweb.sync.download(function(imported) {
 				// Done
 				console.log('Manual download done');
@@ -419,10 +423,15 @@ console.log(updatedHosts.value);
 						location.reload();
 					});
 				}
+				btn.removeClass('loading');
 			});
 		});
 
-		$('btn-upload').on('click', function() {
+		$('btn-upload').on('click', function(e) {
+			e.preventDefault();
+
+			var btn = this;
+			btn.addClass('loading');
 			rweb.sync.upload(function() {
 				rweb.log('upload', false, function() {
 					// Log saved
@@ -430,7 +439,10 @@ console.log(updatedHosts.value);
 
 				// Done
 				console.log('Manual upload done');
-				alert('Uploaded!');
+				// alert('Uploaded!');
+
+				btn.removeClass('dirty');
+				btn.removeClass('loading');
 			});
 		});
 
@@ -460,7 +472,9 @@ console.log(updatedHosts.value);
 			}
 		}, 2);
 
-		$('btn-connect2drive').on('click', function() {
+		$('btn-connect2drive').on('click', function(e) {
+			e.preventDefault();
+
 			rweb.sync.connect(function(token) {
 				alert('Done! Now download and upload manually once, and then it will be automatic.');
 				location.reload();
@@ -470,10 +484,12 @@ console.log(updatedHosts.value);
 
 
 		/**
-		 * EXPORT
+		 * OPEN SYNC LOG
 		 */
 
 		$('btn-sync-log').on('click', function(e) {
+			e.preventDefault();
+
 			var $form = $('form-sync-log');
 			if ( $form.toggle() ) {
 				var $ta = $('ta-sync-log');
@@ -507,6 +523,8 @@ console.log(updatedHosts.value);
 		 */
 
 		$('btn-export').on('click', function(e) {
+			e.preventDefault();
+
 			var settings = rweb.ui.settings(false);
 
 			var $form = $('form-export');
@@ -526,6 +544,8 @@ console.log(updatedHosts.value);
 		 */
 
 		$('btn-import').on('click', function(e) {
+			e.preventDefault();
+
 			if ( $('form-import').toggle() ) {
 				$('ta-import').focus();
 			}
@@ -559,6 +579,8 @@ console.log(updatedHosts.value);
 		 */
 
 		$('btn-disabled').on('click', function(e) {
+			e.preventDefault();
+
 			chrome.storage.local.get('disabled', function(items) {
 				var disabled = items.disabled || {},
 					hosts = Object.keys(disabled);

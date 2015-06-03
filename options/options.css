@@ -164,6 +164,13 @@ p[data-notifid].read {
 
 
 
+.actions button > .loading {
+	margin-left: 10px;
+}
+.actions button:not(.loading) > .loading {
+	display: none;
+}
+
 .actions input {
 	cursor: pointer;
 }

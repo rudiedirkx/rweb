@@ -10,7 +10,7 @@
 <body class="loading">
 
 <p data-notifid="1">Saving this form from within a textfield (CTRL + S), will propagate CSS to all relevant open tabs.</p>
-<p data-notifid="2">You can UPLOAD and DOWNLOAD data to/from Google Drive manually. For now, I WON'T CHECK AUTOMATICALLY.</p>
+<p data-notifid="3">You can UPLOAD and DOWNLOAD data to/from Google Drive. You can do it manually at any point. It happens automatically every 30 mins (download) and when you close this page (upload).</p>
 
 <form id="sites">
 	<table>
@@ -74,8 +74,14 @@ load(function() {
 					<input type="button" value="Blacklist" id="btn-disabled" disabled title="Edit your disabled sites. Might induce a disabled-state delay on the relevant website." />
 					&nbsp;
 					<input type="button" value="Connect to Google Drive" id="btn-connect2drive" disabled />
-					<input type="button" value="DOWNLOAD" id="btn-download" disabled data-disabled title="Manually download sites from your GDrive." />
-					<input type="button" value="UPLOAD" id="btn-upload" disabled data-disabled title="Manually upload sites to your GDrive." />
+					<button id="btn-download" disabled data-disabled title="Manually download sites from your GDrive.">
+						DOWNLOAD
+						<img class="loading" src="loading16.gif" alt="[LOADING]" />
+					</button>
+					<button id="btn-upload" disabled data-disabled title="Manually upload sites to your GDrive.">
+						UPLOAD
+						<img class="loading" src="loading16.gif" alt="[LOADING]" />
+					</button>
 					&nbsp;
 					<input type="button" value="Sync log" id="btn-sync-log" disabled />
 				</td>
