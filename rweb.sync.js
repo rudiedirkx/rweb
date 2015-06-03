@@ -68,8 +68,21 @@ rweb.sync = {
 	},
 
 	connect: function(callback, silent) {
-		chrome.identity.getAuthToken({interactive: !silent}, function(token) {
-			callback(token);
+		var interactive = !silent;
+		chrome.identity.getAuthToken({interactive: interactive}, function(token) {
+			if ( token ) {
+				callback(token);
+			}
+			else {
+				console.warn("chrome.identity.getAuthToken() didn't return a token!");
+				if ( chrome.runtime.lastError ) {
+					console.warn(chrome.runtime.lastError);
+				}
+
+				if ( silent === 2 ) {
+					callback(false);
+				}
+			}
 		});
 	},
 	download: function(callback, silent) {

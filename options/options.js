@@ -452,6 +452,21 @@ console.log(updatedHosts.value);
 			$('btn-download').attr('title', downloadTitle.join("\n\n"));
 		});
 
+		// Enable buttons only if SYNC is enabled
+		rweb.sync.connect(function(token) {
+			if ( token ) {
+				$$('#btn-download, #btn-upload').prop('disabled', false);
+				document.body.addClass('sync-enabled');
+			}
+		}, 2);
+
+		$('btn-connect2drive').on('click', function() {
+			rweb.sync.connect(function(token) {
+				alert('Done! Now download and upload manually once, and then it will be automatic.');
+				location.reload();
+			});
+		});
+
 
 
 		/**

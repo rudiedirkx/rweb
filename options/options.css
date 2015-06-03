@@ -32,13 +32,22 @@ textarea {
 }
 input[type=submit],
 input[type=button],
-input[type=reset] {
+input[type=reset],
+button {
 	padding: 5px 15px;
 }
-input[type=submit] {
+input[type=submit],
+button.submit {
 	letter-spacing: 2px;
 	text-transform: uppercase;
 	font-weight: bold;
+}
+input[type=submit]:disabled,
+input[type=button]:disabled,
+input[type=reset]:disabled,
+button:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
 }
 form, p {
 	margin: 0 0 1em;
@@ -117,6 +126,9 @@ p[data-notifid].read {
 #sites tbody.disabled {
 	opacity: 0.6;
 }
+#sites tbody.new-site .host::-webkit-input-placeholder {
+	color: #777;
+}
 #sites td.checkboxify {
 	cursor: pointer;
 }
@@ -152,11 +164,28 @@ p[data-notifid].read {
 
 
 
+.actions input {
+	cursor: pointer;
+}
+.actions #btn-connect2drive {
+	border-color: green;
+	background-color: green;
+	color: white;
+}
 .actions #btn-upload.dirty {
 	box-shadow: 0 0 5px orange;
 }
 .actions #btn-download.behind {
 	box-shadow: 0 0 5px red;
+}
+
+body.sync-enabled #btn-connect2drive {
+	display: none;
+}
+body:not(.sync-enabled) #btn-download,
+body:not(.sync-enabled) #btn-upload,
+body:not(.sync-enabled) #btn-sync-log {
+	display: none;
 }
 
 
