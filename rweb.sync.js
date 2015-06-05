@@ -18,7 +18,7 @@ rweb.sync = {
 						var oldSite = rweb.unify(existingSites[site.id]);
 						var newSite = rweb.unify(site);
 						if ( !rweb.equal(oldSite, newSite) ) {
-							r.merge(existingSites[site.id], site);
+							existingSites[site.id] = site;
 							update.push(site.host);
 						}
 					});
