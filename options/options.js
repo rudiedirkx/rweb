@@ -492,6 +492,8 @@ console.log(updatedHosts.value);
 
 			var $form = $('form-sync-log');
 			if ( $form.toggle() ) {
+				$form.scrollIntoViewIfNeeded();
+
 				var $ta = $('ta-sync-log');
 				chrome.storage.local.get(['log'], function(items) {
 					var logs = items.log || [];
@@ -529,6 +531,8 @@ console.log(updatedHosts.value);
 
 			var $form = $('form-export');
 			if ( $form.toggle() ) {
+				$form.scrollIntoViewIfNeeded();
+
 				var $ta = $('ta-export');
 				$ta.value = JSON.stringify(settings);
 				$ta.focus();
@@ -546,8 +550,12 @@ console.log(updatedHosts.value);
 		$('btn-import').on('click', function(e) {
 			e.preventDefault();
 
-			if ( $('form-import').toggle() ) {
-				$('ta-import').focus();
+			var $form = $('form-import');
+			if ( $form.toggle() ) {
+				$form.scrollIntoViewIfNeeded();
+
+				var $ta = $('ta-import');
+				$ta.focus();
 			}
 		});
 
@@ -585,8 +593,13 @@ console.log(updatedHosts.value);
 				var disabled = items.disabled || {},
 					hosts = Object.keys(disabled);
 
-				$('form-disabled').show();
-				$('ta-disabled').setText(hosts.join("\n")).focus();
+				var $form = $('form-disabled');
+				if ( $form.toggle() ) {
+					$form.scrollIntoViewIfNeeded();
+
+					var $ta = $('ta-disabled');
+					$ta.setText(hosts.join("\n")).focus();
+				}
 			});
 		});
 
