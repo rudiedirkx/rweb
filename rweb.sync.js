@@ -7,12 +7,19 @@ rweb.sync = {
 			if ( newSites.length ) {
 				rweb.sitesByUUID(function(existingSites, existingSitesList) {
 					var add = [],
-						update = [];
+						update = [],
+						orphans = Object.keys(existingSites),
+						unchanged = [];
 					newSites.forEach(function(site) {
 						if ( !site.id || !existingSites[site.id] ) {
 							site.id || (site.id = rweb.uuid());
 							add.push(site);
 							return;
+						}
+
+						var i = orphans.indexOf(site.id);
+						if ( i >= 0 ) {
+							orphans.splice(i, 1);
 						}
 
 						var oldSite = rweb.unify(existingSites[site.id]);
@@ -21,25 +28,32 @@ rweb.sync = {
 							existingSites[site.id] = site;
 							update.push(site.host);
 						}
+						else {
+							unchanged.push(site.host);
+						}
 					});
 
 					// Print detailed log before asking confirmation
 					console.log("\n\n==== IMPORT LOG ====");
-					console.log("TO ADD:\n" + add.map(function(site) {
-						return ' - ' + site.host;
-					}).join("\n"));
-					console.log("TO UPDATE:\n" + update.map(function(host) {
-						return ' - ' + host;
-					}).join("\n"));
+					console.log("NEW TO ADD:\n - " + add.map(function(site) {
+						return site.host;
+					}).join("\n - "));
+					console.log("LOCAL TO UPDATE:\n - " + update.join("\n - "));
+					console.log("LOCAL UNCHANGED:\n - " + unchanged.join("\n - "));
+					console.log("LOCAL ORPHANS:\n - " + orphans.map(function(uuid) {
+						return existingSites[uuid].host;
+					}).join("\n - "));
 					console.log("==== IMPORT LOG ====\n\n");
 
 					// Summarize & confirm
 					var message = [
 						"Import summary:",
 						([
-							newSites.length + " sites were detected",
+							newSites.length + " sites ready to import",
 							add.length + " sites will be added",
 							update.length + " sites will be updated",
+							unchanged.length + " sites will be unchanged",
+							orphans.length + " sites exist locally and not in import",
 						]).join("\n"),
 						"(the console contains a more detailed log)",
 						"Do you agree?",
