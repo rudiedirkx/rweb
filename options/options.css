@@ -261,4 +261,9 @@ html {
 .tmp-site-host-width {
 	display: inline-block;
 	font-family: Arial;
+	position: absolute;
+	top: 0;
+	visibility: hidden;
+	pointer-events: none;
+	z-index: -2;
 }
