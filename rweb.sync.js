@@ -5,7 +5,7 @@ rweb.sync = {
 		if ( newSites instanceof Array ) {
 			newSites = newSites.filter(rweb.siteFilter);
 			if ( newSites.length ) {
-				rweb.sitesByUUID(function(existingSites, existingSitesList) {
+				rweb.sitesByUUID(function(existingSites) {
 					var add = [],
 						update = [],
 						orphans = Object.keys(existingSites),
@@ -59,10 +59,21 @@ rweb.sync = {
 						"Do you agree?",
 					];
 					if ( silent || confirm(message.join("\n\n")) ) {
+						// Add new
 						add.forEach(function(site) {
-							existingSitesList.push(site);
+							existingSites[site.id] = site;
 						});
-						rweb.saveSites(existingSitesList, function() {
+
+						// Convert to array and save
+						var list = [];
+						for ( var uuid in existingSites ) {
+							if ( existingSites.hasOwnProperty(uuid) ) {
+								list.push(existingSites[uuid]);
+							}
+						}
+
+						// Save array
+						rweb.saveSites(list, function() {
 							callback(true);
 						});
 						return;
