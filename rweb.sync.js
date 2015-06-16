@@ -163,6 +163,24 @@ rweb.sync = {
 		}, silent); // connect()
 	},
 	upload: function(callback, silent) {
+		var start = function() {
+			rweb.sync.connect(function(token) {
+				rweb.sync.drive.list(token, function(rsp) {
+					// File exists, overwrite
+					if ( rsp.items.length ) {
+						var file = rsp.items[0];
+						upload(token, file);
+					}
+					// File doesn't exist, create & upload
+					else {
+						rweb.sync.drive.create(token, function(file) {
+							upload(token, file);
+						});
+					}
+				}); // drive.list()
+			}, silent); // connect()
+		};
+
 		var upload = function(token, file) {
 			rweb.sync.drive.upload(token, file.id, function(data) {
 				chrome.storage.local.set({lastUpload: Date.now()}, function() {
@@ -172,21 +190,21 @@ rweb.sync = {
 			});
 		};
 
-		rweb.sync.connect(function(token) {
-			rweb.sync.drive.list(token, function(rsp) {
-				// File exists, overwrite
-				if ( rsp.items.length ) {
-					var file = rsp.items[0];
-					upload(token, file);
+		// Auto upload, only if dirty
+		if ( silent ) {
+			chrome.storage.local.get(['dirty'], function(items) {
+				if ( items.dirty == null || items.dirty ) {
+					start();
 				}
-				// File doesn't exist, create & upload
 				else {
-					rweb.sync.drive.create(token, function(file) {
-						upload(token, file);
-					});
+					console.log('Not auto-uploading, because local state is clean');
 				}
-			}); // drive.list()
-		}, silent); // connect()
+			});
+		}
+		// Manual upload, always
+		else {
+			start();
+		}
 	},
 	drive: {
 		wrapLoad: function(type, body) {
