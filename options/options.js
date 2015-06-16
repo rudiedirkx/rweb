@@ -275,7 +275,6 @@ rweb.ui = {
 						if ( tbody ) {
 							var updatedHosts = tbody.getElement('.el-host');
 							if ( updatedHosts ) {
-console.log(updatedHosts.value);
 								rweb.ui.propagateNewCSS(updatedHosts.value);
 							}
 						}

@@ -186,7 +186,7 @@ rweb.sync = {
 					});
 				}
 			}); // drive.list()
-		}); // connect()
+		}, silent); // connect()
 	},
 	drive: {
 		wrapLoad: function(type, body) {
