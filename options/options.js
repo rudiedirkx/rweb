@@ -164,7 +164,8 @@ rweb.ui = {
 		rweb.sites(null, function(sites) {
 			sites.each(function(site) {
 				var $tbody = document.el('tbody').setHTML($newSite.getHTML()).injectAfter($table.getFirst());
-				$tbody.attr('data-host', site.host);
+				$tbody.data('host', site.host);
+				$tbody.data('id', site.id);
 				$tbody.setNamedElementValues(site, true);
 				$tbody.enabledOrDisabledClass();
 			});
@@ -620,6 +621,74 @@ rweb.ui = {
 					$form.removeClass('saved');
 				}, 1000);
 			});
+		});
+
+
+
+		/**
+		 * SEARCH
+		 */
+
+		$('btn-search').on('click', function(e) {
+			e.preventDefault();
+
+			var $form = $('form-search');
+			if ( $form.toggle() ) {
+				$form.scrollIntoViewIfNeeded();
+
+				var $inp = $('inp-search');
+				$inp.focus();
+			}
+		});
+
+		$('form-search').on('submit', function(e) {
+			e.preventDefault();
+
+			var q = this.elements.query.value;
+			if ( !q.trim() ) {
+				return;
+			}
+
+			var cs = this.elements.cs.checked;
+			if ( !cs ) {
+				q = q.toLowerCase();
+			}
+
+			$$('.hilited').removeClass('hilited');
+
+			var sites = rweb.ui.settings();
+			var matches = [];
+			sites.forEach(function(site) {
+				var match = false;
+				var css = !cs ? site.css.toLowerCase() : site.css;
+				var js = !cs ? site.js.toLowerCase() : site.js;
+
+				var $tbody = $('tbody[data-id="' + site.id + '"]', true);
+
+				var inCSS = css.split(q).length-1;
+				if ( inCSS ) {
+					match = true;
+					$tbody.getElement('.el-css').addClass('hilited');
+				}
+
+				var inJS = js.split(q).length-1;
+				if ( inJS ) {
+					match = true;
+					$tbody.getElement('.el-js').addClass('hilited');
+				}
+
+				if ( match ) {
+					$tbody.addClass('hilited');
+					matches.push('CSS: ' + inCSS + '  JS: ' + inJS + '  - <span class="host">' + site.host.replace(/,/g, ', ') + '</span>');
+				}
+			});
+
+			$('search-results-num-sites').setText(matches.length);
+			$('search-results').addClass('open');
+			var html = matches ? '<li>' + matches.join('</li><li>') + '</li>' : '';
+			$('search-results-summary').setHTML(html);
+
+			this.scrollIntoViewIfNeeded();
 		});
 
 

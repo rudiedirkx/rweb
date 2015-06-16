@@ -84,6 +84,8 @@ load(function() {
 					</button>
 					&nbsp;
 					<input type="button" value="Sync log" id="btn-sync-log" disabled />
+					&nbsp;
+					<input type="button" value="Search" id="btn-search" disabled />
 				</td>
 			</tr>
 		</tfoot>
@@ -113,6 +115,20 @@ platform.twitter.com"></textarea><br>
 <form class="pop-out" id="form-sync-log" style="display: none">
 	<h2>Sync log</h2>
 	<textarea rows="6" id="ta-sync-log"></textarea>
+</form>
+
+<form class="pop-out" id="form-search" style="display: none">
+	<h2>Search</h2>
+	<p>
+		Query:
+		<input type="search" name="query" id="inp-search" />
+		<input type="submit" value="Search" />
+		<label><input type="checkbox" name="cs" /> Case sensitive</label>
+	</p>
+	<div id="search-results">
+		<p><span id="search-results-num-sites">0</span> sites found. Relevant areas are highlighted.</p>
+		<ul id="search-results-summary"></ul>
+	</div>
 </form>
 
 <form id="prefs">

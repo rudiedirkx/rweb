@@ -161,6 +161,11 @@ p[data-notifid].read {
 	tab-size: 4;
 	resize: vertical;
 }
+#sites textarea.code.hilited {
+	background: lightblue;
+	color: darkblue;
+	/*text-shadow: 0 0 6px rgba(0, 0, 0, 0.2);*/
+}
 
 
 
@@ -205,6 +210,20 @@ form.pop-out {
 }
 form.pop-out h2 {
 	margin: 0 0 .5em 0;
+}
+
+
+
+#form-search #search-results-summary {
+	font-size: 18px;
+	line-height: 1.4;
+	white-space: pre-wrap;
+}
+#form-search #search-results-summary * {
+	font-family: monospace;
+}
+#form-search #search-results-summary .host {
+	font-weight: bold;
 }
 
 
