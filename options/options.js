@@ -176,6 +176,12 @@ rweb.ui = {
 	openSite: function(tbody) {
 		rweb.ui.closeSites(tbody);
 		tbody.classList.add('expanded');
+		setTimeout(function() {
+			tbody.getElement('.el-host').focus();
+			setTimeout(function() {
+				tbody.scrollIntoViewIfNeeded();
+			}, 1);
+		}, 1);
 	},
 	closeSites: function(not) {
 		$sites.getElements('tbody.expanded').filter(function(tb) {
@@ -679,7 +685,7 @@ rweb.ui = {
 
 				if ( match ) {
 					$tbody.addClass('hilited');
-					matches.push('CSS: ' + inCSS + '  JS: ' + inJS + '  - <span class="host">' + site.host.replace(/,/g, ', ') + '</span>');
+					matches.push('CSS: ' + inCSS + '  JS: ' + inJS + '  - <a href="#" data-id="' + site.id + '" class="host">' + site.host.replace(/,/g, ', ') + '</a>');
 				}
 			});
 
@@ -689,6 +695,14 @@ rweb.ui = {
 			$('search-results-summary').setHTML(html);
 
 			this.scrollIntoViewIfNeeded();
+		});
+
+		$('search-results').on('click', 'a.host[data-id]', function(e) {
+			e.preventDefault();
+
+			var id = this.data('id');
+			var $tbody = $('tbody[data-id="' + id + '"]', true);
+			rweb.ui.openSite($tbody);
 		});
 
 

@@ -225,6 +225,8 @@ form.pop-out h2 {
 }
 #form-search #search-results-summary .host {
 	font-weight: bold;
+	color: black;
+	text-decoration: none;
 }
 
 
