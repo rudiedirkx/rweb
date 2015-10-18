@@ -160,6 +160,7 @@ p[data-notifid].read {
 	display: block;
 	tab-size: 4;
 	resize: vertical;
+	overflow: hidden;
 }
 #sites textarea.code.hilited {
 	background: lightblue;
