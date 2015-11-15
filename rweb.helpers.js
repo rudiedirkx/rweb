@@ -80,11 +80,13 @@ rweb = {
 
 	sites: function(host, callback, options) {
 		console.time('rweb.sites ("' + host + '")');
-		chrome.storage.local.get(['sites', 'disabled', 'lastDownload', 'downloadingSince'], function(items) {
+		chrome.storage.local.get(['sites', 'dirty', 'disabled', 'lastDownload', 'downloadingSince'], function(items) {
+			var dirty = Boolean(items.dirty);
 			var disabled = host && items.disabled && items.disabled[host] ? true : false;
 			var sites = items.sites || [];
 
 			var meta = {
+				dirty: dirty,
 				disabled: disabled,
 				lastDownload: items.lastDownload || 0,
 				downloadingSince: items.downloadingSince || 0,

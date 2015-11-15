@@ -183,8 +183,8 @@ rweb.sync = {
 
 		var upload = function(token, file) {
 			rweb.sync.drive.upload(token, file.id, function(data) {
-				chrome.storage.local.set({lastUpload: Date.now()}, function() {
-					console.log('Saved `lastUpload.');
+				chrome.storage.local.set({lastUpload: Date.now(), lastDownload: Date.now()}, function() {
+					console.log('Saved `lastUpload` and `lastDownload`.');
 					callback();
 				});
 			});

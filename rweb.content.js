@@ -19,11 +19,16 @@ if ( document.documentElement && document.documentElement.nodeName == 'HTML' && 
 
 		if ( !meta.lastDownload || meta.lastDownload < Date.now() - rweb.MUST_DOWNLOAD_EVERY_N_MINUTES * 60000 ) {
 			if ( !meta.downloadingSince || meta.downloadingSince < Date.now() - 10000 ) {
-				console.log('WILL START AUTO-DOWNLOAD NOW! See background script for log.');
-				chrome.runtime.sendMessage({forceAutoDownload: true}, function(response) {
-					// Never reaches here, because sendResponse in bg script doesn't work!?
-					console.log('DOWNLOADED SITES!');
-				});
+				if ( !meta.dirty ) {
+					console.log('[RWeb] WILL START AUTO-DOWNLOAD NOW! See background script for log.');
+					chrome.runtime.sendMessage({forceAutoDownload: true}, function(response) {
+						// Never reaches here, because sendResponse in bg script doesn't work!?
+						console.log('[RWeb] DOWNLOADED SITES!');
+					});
+				}
+				else {
+					console.warn("[RWeb] NOT STARTING AUTO-DOWNLOAD, because local state is dirty. Go to options page to fix.");
+				}
 			}
 		}
 	});
