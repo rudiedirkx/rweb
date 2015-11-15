@@ -1,95 +1,96 @@
 rweb.sync = {
 
 	import: function(newSites, callback, silent) {
-		// Validate import
-		if ( newSites instanceof Array ) {
-			newSites = newSites.filter(rweb.siteFilter);
-			if ( newSites.length ) {
-				rweb.sitesByUUID(function(existingSites) {
-					var add = [],
-						update = [],
-						orphans = Object.keys(existingSites),
-						unchanged = [];
-					newSites.forEach(function(site) {
-						if ( !site.id || !existingSites[site.id] ) {
-							site.id || (site.id = rweb.uuid());
-							add.push(site);
-							return;
-						}
+		var summary = {
+			imported: false,
+			changes: 0,
+		};
 
-						var i = orphans.indexOf(site.id);
-						if ( i >= 0 ) {
-							orphans.splice(i, 1);
-						}
-
-						var oldSite = rweb.unify(existingSites[site.id]);
-						var newSite = rweb.unify(site);
-						if ( !rweb.equal(oldSite, newSite) ) {
-							existingSites[site.id] = site;
-							update.push(site.host);
-						}
-						else {
-							unchanged.push(site.host);
-						}
-					});
-
-					// Print detailed log before asking confirmation
-					console.log("\n\n==== IMPORT LOG ====");
-					console.log("NEW TO ADD:\n - " + add.map(function(site) {
-						return site.host;
-					}).join("\n - "));
-					console.log("LOCAL TO UPDATE:\n - " + update.join("\n - "));
-					console.log("LOCAL UNCHANGED:\n - " + unchanged.join("\n - "));
-					console.log("LOCAL ORPHANS:\n - " + orphans.map(function(uuid) {
-						return existingSites[uuid].host;
-					}).join("\n - "));
-					console.log("==== IMPORT LOG ====\n\n");
-
-					// Summarize & confirm
-					var message = [
-						"Import summary:",
-						([
-							newSites.length + " sites ready to import",
-							add.length + " sites will be added",
-							update.length + " sites will be updated",
-							unchanged.length + " sites will be unchanged",
-							orphans.length + " sites exist locally and not in import",
-						]).join("\n"),
-						"(the console contains a more detailed log)",
-						"Do you agree?",
-					];
-					if ( silent || confirm(message.join("\n\n")) ) {
-						// Add new
-						add.forEach(function(site) {
-							existingSites[site.id] = site;
-						});
-
-						// Convert to array and save
-						var list = [];
-						for ( var uuid in existingSites ) {
-							if ( existingSites.hasOwnProperty(uuid) ) {
-								list.push(existingSites[uuid]);
-							}
-						}
-
-						// Save array
-						rweb.saveSites(list, function() {
-							callback(true);
-						});
+		newSites = newSites.filter(rweb.siteFilter);
+		if ( newSites.length ) {
+			rweb.sitesByUUID(function(existingSites) {
+				var add = [];
+				var update = [];
+				var orphans = Object.keys(existingSites);
+				var unchanged = [];
+				newSites.forEach(function(site) {
+					if ( !site.id || !existingSites[site.id] ) {
+						site.id || (site.id = rweb.uuid());
+						add.push(site);
 						return;
 					}
 
-					callback(false);
-				});
-				return;
-			}
+					var i = orphans.indexOf(site.id);
+					if ( i >= 0 ) {
+						orphans.splice(i, 1);
+					}
 
-			callback(false);
+					var oldSite = rweb.unify(existingSites[site.id]);
+					var newSite = rweb.unify(site);
+					if ( !rweb.equal(oldSite, newSite) ) {
+						existingSites[site.id] = site;
+						update.push(site.host);
+					}
+					else {
+						unchanged.push(site.host);
+					}
+				});
+
+				// Print detailed log before asking confirmation
+				console.log("\n\n==== IMPORT LOG ====");
+				console.log("NEW TO ADD:\n - " + add.map(function(site) {
+					return site.host;
+				}).join("\n - "));
+				console.log("LOCAL TO UPDATE:\n - " + update.join("\n - "));
+				console.log("LOCAL UNCHANGED:\n - " + unchanged.join("\n - "));
+				console.log("LOCAL ORPHANS:\n - " + orphans.map(function(uuid) {
+					return existingSites[uuid].host;
+				}).join("\n - "));
+				console.log("==== IMPORT LOG ====\n\n");
+
+				// Summarize & confirm
+				// @todo Add `delete` when that's a thing: #38
+				summary.changes = add.length + update.length;
+				var message = [
+					"Import summary:",
+					([
+						newSites.length + " sites ready to import",
+						add.length + " sites will be added",
+						update.length + " sites will be updated",
+						unchanged.length + " sites will be unchanged",
+						orphans.length + " sites exist locally and not in import",
+					]).join("\n"),
+					"(the console contains a more detailed log)",
+					"Do you agree?",
+				];
+				if ( silent || confirm(message.join("\n\n")) ) {
+					// Add new
+					add.forEach(function(site) {
+						existingSites[site.id] = site;
+					});
+
+					// Convert to array and save
+					var list = [];
+					for ( var uuid in existingSites ) {
+						if ( existingSites.hasOwnProperty(uuid) ) {
+							list.push(existingSites[uuid]);
+						}
+					}
+
+					// Save array
+					rweb.saveSites(list, function() {
+						summary.imported = true;
+						callback(summary);
+					});
+					return;
+				}
+
+				callback(summary);
+			});
 			return;
 		}
 
-		callback(false);
-		return;
+		callback(summary);
 	},
 
 	connect: function(callback, silent) {
@@ -114,18 +115,18 @@ rweb.sync = {
 		var handler = function(sites) {
 			console.log('Downloaded sites', sites);
 
-			rweb.sync.import(sites, function(imported) {
+			rweb.sync.import(sites, function(summary) {
 				// Remove `downloadingSince` to enable new downloads
 				chrome.storage.local.remove(['downloadingSince']);
 
-				if ( imported ) {
+				if ( summary.imported ) {
 					chrome.storage.local.set({lastDownload: Date.now(), dirty: false}, function() {
-						console.log('Saved `lastDownload.');
-						callback(imported);
+						console.log('Saved `lastDownload`.');
+						callback(summary);
 					});
 				}
 				else {
-					callback(imported);
+					callback(summary);
 				}
 			}, silent);
 		};
@@ -163,6 +164,10 @@ rweb.sync = {
 		}, silent); // connect()
 	},
 	upload: function(callback, silent) {
+		var summary = {
+			dirty: false,
+		};
+
 		var start = function() {
 			rweb.sync.connect(function(token) {
 				rweb.sync.drive.list(token, function(rsp) {
@@ -185,26 +190,22 @@ rweb.sync = {
 			rweb.sync.drive.upload(token, file.id, function(data) {
 				chrome.storage.local.set({lastUpload: Date.now(), lastDownload: Date.now()}, function() {
 					console.log('Saved `lastUpload` and `lastDownload`.');
-					callback();
+					callback(summary);
 				});
 			});
 		};
 
-		// Auto upload, only if dirty
-		if ( silent ) {
-			chrome.storage.local.get(['dirty'], function(items) {
-				if ( items.dirty == null || items.dirty ) {
-					start();
-				}
-				else {
-					console.log('Not auto-uploading, because local state is clean');
-				}
-			});
-		}
-		// Manual upload, always
-		else {
-			start();
-		}
+		chrome.storage.local.get('dirty', function(items) {
+			summary.dirty = Boolean(items.dirty == null || items.dirty);
+
+			// Manual upload, always. Auto upload, only if dirty
+			if ( !silent || summary.dirty ) {
+				start();
+			}
+			else {
+				console.log('Not auto-uploading, because local state is clean');
+			}
+		});
 	},
 	drive: {
 		wrapLoad: function(type, body) {

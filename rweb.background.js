@@ -147,13 +147,13 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
 	// Forced auto-download from content script
 	if ( msg && msg.forceAutoDownload ) {
-		rweb.sync.download(function(imported) {
-			rweb.log('download', true, function() {
+		rweb.sync.download(function(summary) {
+			rweb.log('download', true, summary.changes, function() {
 				// Log saved
 			});
 
 			// This one doesn't reach the content script for some reason... Too async?
-			sendResponse({imported: imported});
+			sendResponse(summary);
 		}, true);
 	}
 
@@ -161,8 +161,9 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if ( msg && msg.optionsClosed ) {
 		optionsClosedTimer = setTimeout(function() {
 			console.log('Uploading automatically, because options page closed');
-			rweb.sync.upload(function() {
-				rweb.log('upload', true, function() {
+			rweb.sync.upload(function(summary) {
+				var changes = !summary.dirty ? 0 : null;
+				rweb.log('upload', true, changes, function() {
 					// Log saved
 				});
 

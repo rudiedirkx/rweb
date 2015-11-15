@@ -421,11 +421,11 @@ rweb.ui = {
 
 			var btn = this;
 			btn.addClass('loading');
-			rweb.sync.download(function(imported) {
+			rweb.sync.download(function(summary) {
 				// Done
 				console.log('Manual download done');
-				if ( imported ) {
-					rweb.log('download', false, function() {
+				if ( summary.imported ) {
+					rweb.log('download', false, summary.changes, function() {
 						location.reload();
 					});
 				}
@@ -438,8 +438,9 @@ rweb.ui = {
 
 			var btn = this;
 			btn.addClass('loading');
-			rweb.sync.upload(function() {
-				rweb.log('upload', false, function() {
+			rweb.sync.upload(function(summary) {
+				var changes = !summary.dirty ? 0 : null;
+				rweb.log('upload', false, changes, function() {
 					// Log saved
 				});
 
@@ -501,7 +502,7 @@ rweb.ui = {
 				$form.scrollIntoViewIfNeeded();
 
 				var $ta = $('ta-sync-log');
-				chrome.storage.local.get(['log'], function(items) {
+				chrome.storage.local.get('log', function(items) {
 					var logs = items.log || [];
 
 					var rpad = function(str, len) {
@@ -513,10 +514,14 @@ rweb.ui = {
 
 					var lines = [];
 					logs.forEach(function(log) {
+						var dt = new Date(log.utc);
+						var date = dt.getDate() + ' ' + dt.toDateString().match(/ ([^ ]+)/)[1] + ' ' + dt.getFullYear();
+						var time = dt.toISOString().match(/T([^\.]+)/)[1];
 						lines.push(
-							rpad(log.type, 10) +
-							rpad(log.automatic ? 'automatic' : 'manual', 11) +
-							String(new Date(log.utc))
+							rpad(log.type, 11) +
+							rpad(log.automatic ? 'automatic' : 'manual', 12) +
+							rpad(log.changes == null ? '?' : String(log.changes), 5) +
+							date + ' - ' + time
 						);
 					});
 					$ta.value = lines.join("\n");
@@ -572,14 +577,17 @@ rweb.ui = {
 			var code = this.elements.code.value;
 			try {
 				var newSites = JSON.parse(code);
+				if ( newSites.constructor != Array ) {
+					return alert('Imported data must be an Array');
+				}
 			}
 			catch (ex) {
 				return alert('Invalid code:\n\n' + ex);
 			}
 
-			rweb.sync.import(newSites, function(imported) {
-				if ( imported ) {
-					rweb.log('import', false, function() {
+			rweb.sync.import(newSites, function(summary) {
+				if ( summary.imported ) {
+					rweb.log('import', false, summary.changes, function() {
 						location.reload();
 					});
 				}
@@ -703,6 +711,24 @@ rweb.ui = {
 			var id = this.data('id');
 			var $tbody = $('tbody[data-id="' + id + '"]', true);
 			rweb.ui.openSite($tbody);
+		});
+
+
+
+		/**
+		 * TEXTAREA SCROLLING
+		 */
+
+		$$('.pop-out textarea').on('mousewheel', function(e) {
+			if ( this != document.activeElement ) return;
+
+			var d = e.originalEvent.wheelDelta || -e.originalEvent.detail;
+			var dir = d > 0 ? 'up' : 'down';
+
+			var stop = (dir == 'up' && this.scrollTop == 0) || (dir == 'down' && this.scrollTop == this.scrollHeight-this.clientHeight);
+			if ( stop ) {
+				e.preventDefault();
+			}
 		});
 
 

@@ -159,10 +159,11 @@ rweb = {
 		});
 	},
 
-	log: function(type, automatic, callback) {
+	log: function(type, automatic, changes, callback) {
 		var log = {
 			type: type,
 			automatic: !!automatic,
+			changes: changes,
 			utc: Date.now(),
 		};
 		chrome.storage.local.get(['log'], function(items) {
