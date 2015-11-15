@@ -516,7 +516,7 @@ rweb.ui = {
 					logs.forEach(function(log) {
 						var dt = new Date(log.utc);
 						var date = dt.getDate() + ' ' + dt.toDateString().match(/ ([^ ]+)/)[1] + ' ' + dt.getFullYear();
-						var time = dt.toISOString().match(/T([^\.]+)/)[1];
+						var time = dt.toTimeString().match(/^([^ ]+)/)[1];
 						lines.push(
 							rpad(log.type, 11) +
 							rpad(log.automatic ? 'automatic' : 'manual', 12) +
