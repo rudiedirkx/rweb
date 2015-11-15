@@ -12,6 +12,9 @@ body {
 	margin: 0;
 	padding: 20px;
 }
+body.loading {
+	height: 29999px;
+}
 input:not([type=submit]):not([type=button]):not([type=reset]),
 textarea,
 select {

@@ -819,8 +819,12 @@ document.body.onload = function() {
 		return;
 	}
 
-	// Init
-	rweb.ui.init();
+	// Apply local styling
+	rweb.site('options', function(site) {
+		if ( site ) {
+			site.css && rweb.css(site.css);
+		}
+	}, {includeWildcard: false});
 
 	// Hide notifications
 	var notifidsRead = (localStorage.notifidsRead || '').split(' ');
@@ -840,17 +844,13 @@ document.body.onload = function() {
 		}
 	});
 
-	// Apply local styling
-	rweb.site('options', function(site) {
-		if ( site ) {
-			site.css && rweb.css(site.css);
-		}
-	}, {includeWildcard: false});
-
 	// Upload when closing options page
 	window.onbeforeunload = function() {
 		chrome.runtime.sendMessage({optionsClosed: true}, function(response) {
 			// This tab is gone already
 		});
 	};
+
+	// Init
+	rweb.ui.init();
 };

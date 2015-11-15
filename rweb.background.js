@@ -89,7 +89,7 @@
 		chrome.contextMenus.update(browserActionMenuItemId, {"title": newLabel});
 
 		// Update badge
-		if (disabled) {
+		if ( disabled ) {
 			// Show X on red
 			chrome.browserAction.setBadgeBackgroundColor({
 				color: [255, 0, 0, 255], // red
