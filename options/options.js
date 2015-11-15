@@ -226,7 +226,7 @@ rweb.ui = {
 			})
 
 			// Close site
-			.on('keyup', '.el-host', function(e) {
+			.on('keydown', '.el-host', function(e) {
 				if ( e.key == Event.Keys.esc ) {
 					this.value = this.defaultValue;
 
