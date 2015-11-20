@@ -758,7 +758,7 @@ rweb.ui = {
 			var sites = rweb.ui.settings();
 			var counter = {};
 
-			chrome.tabs.query({active: false}, function(tabs) {
+			chrome.tabs.query({}, function(tabs) {
 				tabs.forEach(function(tab) {
 					var a = document.createElement('a');
 					a.href = tab.url;
