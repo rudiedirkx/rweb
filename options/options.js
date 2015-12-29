@@ -112,7 +112,7 @@ rweb.ui = {
 
 				// Hilite ass matching sites
 				$$('.el-host').each(function(el) {
-					if (rweb.hostMatch(el.value, host)) {
+					if (rweb.hostsMatch(el.value, host)) {
 						el.ancestor('tbody').addClass('hilited');
 					}
 				});
@@ -764,7 +764,7 @@ rweb.ui = {
 					a.href = tab.url;
 					var host = rweb.host(a.host);
 
-					if ( !disabled[host] && rweb.hostMatch(updatedHosts, host) ) {
+					if ( !disabled[host] && rweb.hostsMatch(updatedHosts, host) ) {
 						var matches = rweb.hostFilter(sites, host),
 							css = '';
 						matches.forEach(function(site) {

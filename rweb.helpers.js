@@ -61,8 +61,12 @@ rweb = {
 		}, callback);
 	},
 
-	hostMatch: function(hosts, host) {
-		return hosts.replace(/\s+/g, '').split(',').indexOf(host) != -1;
+	hostsMatch: function(hosts, host) {
+		hosts = hosts.split(',');
+		return hosts.some(function(subject) {
+			var regex = '^' + subject.trim().replace(/([\.\-])/g, '\\$1').replace(/\*/g, '[^\\.]+') + '$';
+			return new RegExp(regex).test(host);
+		});
 	},
 	hostFilter: function(sites, host, options) {
 		options || (options = {});
@@ -71,7 +75,7 @@ rweb = {
 
 		return sites.filter(function(site) {
 			if ( !checkEnabled || site.enabled ) {
-				if ( (includeWildcard && site.host == '*') || rweb.hostMatch(site.host, host) ) {
+				if ( (includeWildcard && site.host == '*') || rweb.hostsMatch(site.host, host) ) {
 					return true;
 				}
 			}
@@ -122,7 +126,7 @@ rweb = {
 				js += "\n" + site.js;
 
 				site.host == '*' && wildcard++;
-				rweb.hostMatch(site.host, host) && specific++;
+				rweb.hostsMatch(site.host, host) && specific++;
 			});
 
 			if ( !meta.disabled ) {
