@@ -1,7 +1,14 @@
 
 * {
 	box-sizing: border-box;
+}
+*:not(code) {
 	font-family: sans-serif;
+}
+code {
+	padding: 1px 3px;
+	display: inline-block;
+	background: rgba(0, 0, 0, 0.1);
 }
 html {
 	background: #eee;

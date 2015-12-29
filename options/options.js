@@ -824,7 +824,7 @@ document.body.onload = function() {
 		if ( site ) {
 			site.css && rweb.css(site.css);
 		}
-	}, {includeWildcard: false});
+	}, {exact: true});
 
 	// Hide notifications
 	var notifidsRead = (localStorage.notifidsRead || '').split(' ');

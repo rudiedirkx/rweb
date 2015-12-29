@@ -62,6 +62,10 @@ rweb = {
 	},
 
 	hostsMatch: function(hosts, host) {
+		if (hosts == 'all' || hosts == 'matches') {
+			return true;
+		}
+
 		hosts = hosts.split(',');
 		return hosts.some(function(subject) {
 			var regex = '^' + subject.trim().replace(/([\.\-])/g, '\\$1').replace(/\*/g, '[^\\.]+') + '$';
@@ -71,11 +75,11 @@ rweb = {
 	hostFilter: function(sites, host, options) {
 		options || (options = {});
 		var checkEnabled = options.checkEnabled != null ? options.checkEnabled : true;
-		var includeWildcard = options.includeWildcard != null ? options.includeWildcard : true;
+		var exact = options.exact != null ? options.exact : false;
 
 		return sites.filter(function(site) {
 			if ( !checkEnabled || site.enabled ) {
-				if ( (includeWildcard && site.host == '*') || rweb.hostsMatch(site.host, host) ) {
+				if ( exact ? site.host === host : rweb.hostsMatch(site.host, host) ) {
 					return true;
 				}
 			}
@@ -94,16 +98,28 @@ rweb = {
 				disabled: disabled,
 				lastDownload: items.lastDownload || 0,
 				downloadingSince: items.downloadingSince || 0,
+				special: 0,
 			};
 
 			// If this is a query, don't bother sorting, but filter
 			if ( host ) {
 				sites = rweb.hostFilter(sites, host, options);
+
+				meta.special = sites.reduce(function(special, site) {
+					return special + Number(site.host == 'all' || site.host == 'matches');
+				}, 0);
+
 			}
 			// No query, so sort and no filter
 			else {
 				sites.sort(function(a, b) {
-					return a.host < b.host ? 1 : -1;
+					if (a.host == 'all') return 1;
+					else if (b.host == 'all') return -1;
+					else if (a.host == 'matches') return 1;
+					else if (b.host == 'matches') return -1;
+					else if (a.host == 'options') return 1;
+					else if (b.host == 'options') return -1;
+					else return a.host < b.host ? 1 : -1;
 				});
 			}
 
@@ -117,6 +133,13 @@ rweb = {
 		rweb.sites(host, function(sites, meta) {
 			if ( !sites.length ) {
 				return callback(false, meta);
+			}
+
+			// Without specific matches, remove "matches" sites
+			if ( meta.special == sites.length ) {
+				sites = sites.filter(function(site) {
+					return site.host != 'matches';
+				});
 			}
 
 			var css = '', js = '';
