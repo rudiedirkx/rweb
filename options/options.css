@@ -136,7 +136,7 @@ p[data-notifid].read {
 #sites tbody.disabled {
 	opacity: 0.6;
 }
-#sites tbody.new-site .host::-webkit-input-placeholder {
+#sites tbody.new-site:not(.expanded) .host::-webkit-input-placeholder {
 	color: #777;
 }
 #sites td.checkboxify {
