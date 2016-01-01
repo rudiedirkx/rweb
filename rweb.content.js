@@ -48,23 +48,19 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 			disableLocalRWebCSS();
 		}
 		else {
-			enableLocalRWebCSS();
+			enableLocalRWebCSS(msg.rweb.css);
 		}
 	}
 });
 
 function disableLocalRWebCSS() {
-	xableLocalRWebCSS(true);
-}
-
-function enableLocalRWebCSS() {
-	xableLocalRWebCSS(false);
-}
-
-function xableLocalRWebCSS(disabled) {
 	[].forEach.call(document.querySelectorAll('style[data-origin="rweb"]'), function(el) {
-		el.disabled = disabled;
+		el.disabled = true;
 	});
+}
+
+function enableLocalRWebCSS(css) {
+	doCSSUpdate(css);
 }
 
 
@@ -77,8 +73,9 @@ function doCSSUpdate(css) {
 	console.debug('[RWeb] Updating CSS:', rweb.thousands(css.length) + ' bytes');
 
 	// Delete existing style[data-origin="rweb"]
-	var el = document.querySelector('style[data-origin="rweb"]');
-	el && el.remove();
+	[].forEach.call(document.querySelectorAll('style[data-origin="rweb"]'), function(el) {
+		el.remove();
+	});
 
 	// Create 1 new style[data-origin="rweb"]
 	rweb.css(css);

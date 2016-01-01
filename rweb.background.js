@@ -39,18 +39,35 @@
 		updateLabel(nowDisabled, host, tab.id);
 
 		// Update tabs, like options.js does
-		chrome.tabs.query({}, function(tabs) {
-			tabs.forEach(function(tab) {
-				var tabHost = rweb.host(tab.url);
+		function updateTabs(css) {
+			var message = {"rweb": {"disabled": nowDisabled, "css": css}};
+			chrome.tabs.query({}, function(tabs) {
+				tabs.forEach(function(tab) {
+					var tabHost = rweb.host(tab.url);
 
-				// Only EXACT matches, no wildcards etc
-				if ( tabHost == host ) {
-					chrome.tabs.sendMessage(tab.id, {"rweb": {"disabled": nowDisabled}}, function(rsp) {
-						// console.log('Sent new status to origin tab', tab.url, rsp);
-					});
+					// Only EXACT matches, no wildcards etc
+					if ( tabHost == host ) {
+						chrome.tabs.sendMessage(tab.id, message, function(rsp) {
+							// console.log('Sent new status to origin tab', tab.url, rsp);
+						});
+					}
+				});
+			});
+		}
+
+		// Immediately send the disable command
+		if ( nowDisabled ) {
+			updateTabs('');
+		}
+
+		// Collect live CSS, because the page might be loaded disabled
+		else {
+			rweb.site(host, function(site) {
+				if ( site && site.css ) {
+					updateTabs(site.css);
 				}
 			});
-		});
+		}
 	}
 
 	chrome.tabs.onUpdated.addListener(function(tabId, info, tab) {
