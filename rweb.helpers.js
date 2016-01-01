@@ -61,9 +61,14 @@ rweb = {
 		}, callback);
 	},
 
-	hostsMatch: function(hosts, host) {
-		if (hosts == 'all' || hosts == 'matches') {
-			return true;
+	hostsMatch: function(hosts, host, options) {
+		options || (options = {});
+		var exact = options.exact != null ? options.exact : false;
+
+		if ( !exact ) {
+			if (hosts == 'all' || hosts == 'matches') {
+				return true;
+			}
 		}
 
 		hosts = hosts.split(',');

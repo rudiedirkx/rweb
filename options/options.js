@@ -112,7 +112,7 @@ rweb.ui = {
 
 				// Hilite ass matching sites
 				$$('.el-host').each(function(el) {
-					if (rweb.hostsMatch(el.value, host)) {
+					if (rweb.hostsMatch(el.value, host, {exact: true})) {
 						el.ancestor('tbody').addClass('hilited');
 					}
 				});
