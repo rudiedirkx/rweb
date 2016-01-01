@@ -760,9 +760,7 @@ rweb.ui = {
 
 			chrome.tabs.query({}, function(tabs) {
 				tabs.forEach(function(tab) {
-					var a = document.createElement('a');
-					a.href = tab.url;
-					var host = rweb.host(a.host);
+					var host = rweb.host(tab.url);
 
 					if ( !disabled[host] && rweb.hostsMatch(updatedHosts, host) ) {
 						var matches = rweb.hostFilter(sites, host),

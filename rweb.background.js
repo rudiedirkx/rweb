@@ -38,9 +38,18 @@
 		var newLabel = labels[ Number(nowDisabled) ];
 		updateLabel(nowDisabled, host, tab.id);
 
-		// Update tabs, like options.js does & save setting
-		chrome.tabs.sendMessage(tab.id, {"rweb": {"disabled": nowDisabled}}, function(rsp) {
-			// console.log('Sent new status to origin tab', tab.url, rsp);
+		// Update tabs, like options.js does
+		chrome.tabs.query({}, function(tabs) {
+			tabs.forEach(function(tab) {
+				var tabHost = rweb.host(tab.url);
+
+				// Only EXACT matches, no wildcards etc
+				if ( tabHost == host ) {
+					chrome.tabs.sendMessage(tab.id, {"rweb": {"disabled": nowDisabled}}, function(rsp) {
+						// console.log('Sent new status to origin tab', tab.url, rsp);
+					});
+				}
+			});
 		});
 	}
 
@@ -60,7 +69,7 @@
 
 	chrome.windows.onFocusChanged.addListener(function(windowId) {
 		chrome.windows.get(windowId, {"populate": true}, function(window) {
-			var e = chrome.runtime.lastError; // Stut up, Chrome
+			var e = chrome.runtime.lastError; // Shut up, Chrome
 			if ( !window ) return;
 			// console.log('onFocusChanged', windowId, window);
 
