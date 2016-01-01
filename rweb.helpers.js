@@ -153,12 +153,16 @@ rweb = {
 				css += "\n" + site.css;
 				js += "\n" + site.js;
 
-				site.host == '*' && wildcard++;
-				rweb.hostsMatch(site.host, host) && specific++;
+				if ( site.host == 'all' || site.host == 'matches' ) {
+					wildcard++;
+				}
+				else {
+					specific++;
+				}
 			});
 
 			if ( !meta.disabled ) {
-				console.debug('- sites: ' + sites.length + ', specific: ' + Number(specific) + ', wildcard: ' + Number(wildcard));
+				console.debug('- sites: ' + sites.length + ', specific: ' + specific + ', wildcard: ' + wildcard);
 			}
 
 			var site = {
