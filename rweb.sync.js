@@ -14,24 +14,36 @@ rweb.sync = {
 				var orphans = Object.keys(existingSites);
 				var unchanged = [];
 				newSites.forEach(function(site) {
+					// ADD
 					if ( !site.id || !existingSites[site.id] ) {
-						site.id || (site.id = rweb.uuid());
+						if ( !site.id ) {
+							site.id = rweb.uuid();
+						}
+						if ( site.enabled == null ) {
+							site.enabled = true;
+						}
 						add.push(site);
 						return;
 					}
 
+					// ORPHAN
 					var i = orphans.indexOf(site.id);
 					if ( i >= 0 ) {
 						orphans.splice(i, 1);
 					}
 
+					// UPDATE
 					var oldSite = rweb.unify(existingSites[site.id]);
 					var newSite = rweb.unify(site);
 					if ( !rweb.equal(oldSite, newSite) ) {
+						// Changed
+						var enabled = existingSites[site.id].enabled;
 						existingSites[site.id] = site;
+						existingSites[site.id].enabled = enabled;
 						update.push(site.host);
 					}
 					else {
+						// Not changed
 						unchanged.push(site.host);
 					}
 				});
