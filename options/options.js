@@ -591,6 +591,9 @@ rweb.ui = {
 						location.reload();
 					});
 				}
+			}, {
+				"delete": false,
+				"silent": false,
 			});
 		});
 

@@ -1,6 +1,6 @@
 rweb.sync = {
 
-	import: function(newSites, callback, silent) {
+	import: function(newSites, callback, options) {
 		var summary = {
 			imported: false,
 			changes: 0,
@@ -55,14 +55,20 @@ rweb.sync = {
 				}).join("\n - "));
 				console.log("LOCAL TO UPDATE:\n - " + update.join("\n - "));
 				console.log("LOCAL UNCHANGED:\n - " + unchanged.join("\n - "));
-				console.log("LOCAL ORPHANS:\n - " + orphans.map(function(uuid) {
+				console.log("LOCAL " + (options.delete ? "TO DELETE" : "ORPHANS") + ":\n - " + orphans.map(function(uuid) {
 					return existingSites[uuid].host;
 				}).join("\n - "));
 				console.log("==== IMPORT LOG ====\n\n");
 
+				// DELETE
+				if ( options.delete ) {
+					orphans.forEach(function(uuid) {
+						delete existingSites[uuid];
+					});
+				}
+
 				// Summarize & confirm
-				// @todo Add `delete` when that's a thing: #38
-				summary.changes = add.length + update.length;
+				summary.changes = add.length + update.length + (options.delete ? orphans.length : 0);
 				var message = [
 					"Import summary:",
 					([
@@ -70,12 +76,16 @@ rweb.sync = {
 						add.length + " sites will be added",
 						update.length + " sites will be updated",
 						unchanged.length + " sites will be unchanged",
-						orphans.length + " sites exist locally and not in import",
+						(
+							options.delete ?
+							orphans.length + " sites will be deleted" :
+							orphans.length + " sites exist locally and not in import"
+						),
 					]).join("\n"),
 					"(the console contains a more detailed log)",
 					"Do you agree?",
 				];
-				if ( silent || confirm(message.join("\n\n")) ) {
+				if ( options.silent || confirm(message.join("\n\n")) ) {
 					// Add new
 					add.forEach(function(site) {
 						existingSites[site.id] = site;
@@ -140,7 +150,10 @@ rweb.sync = {
 				else {
 					callback(summary);
 				}
-			}, silent);
+			}, {
+				"silent": Boolean(silent),
+				"delete": true,
+			});
 		};
 
 		rweb.sync.connect(function(token) {
