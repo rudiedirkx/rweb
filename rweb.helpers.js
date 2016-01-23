@@ -229,11 +229,23 @@ rweb = {
 			var el = document.createElement('script');
 			el.dataset.origin = 'rweb';
 
+			var wrap = function(cb, delay) {
+				return delay == null ? cb : function() { setTimeout(cb, delay); };
+			};
+			var ready = function(cb, delay) {
+				cb = wrap(cb, delay);
+				document.readyState == 'interactive' || document.readyState == 'complete' ? cb() : document.addEventListener('DOMContentLoaded', cb);
+			};
+			var load = function(cb, delay) {
+				cb = wrap(cb, delay);
+				document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true);
+			};
+
 			js =
 				'(function() {\n\n' +
-				"var wrap = function(cb, delay) { return delay == null ? cb : function() { setTimeout(cb, delay); }; };\n" +
-				"var ready = function(cb, delay) { cb = wrap(cb, delay); document.readyState == 'interactive' || document.readyState == 'complete' ? cb() : document.addEventListener('DOMContentLoaded', cb); };\n" +
-				"var load = function(cb, delay) { cb = wrap(cb, delay); document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true); };\n" +
+				"var wrap = " + String(wrap) + ";\n" +
+				"var ready = " + String(ready) + ";\n" +
+				"var load = " + String(load) + ";\n" +
 				"\n\n" +
 				js + "\n" +
 				"\n\n" +
