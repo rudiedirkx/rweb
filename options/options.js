@@ -436,6 +436,12 @@ rweb.ui = {
 		$('btn-upload').on('click', function(e) {
 			e.preventDefault();
 
+			var sites = rweb.ui.settings();
+			if (!sites || !sites.length) {
+				alert("I won't upload an empty list, because it'll remove everything online.");
+				return;
+			}
+
 			var btn = this;
 			btn.addClass('loading');
 			rweb.sync.upload(function(summary) {
