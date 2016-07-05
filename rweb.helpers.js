@@ -73,7 +73,11 @@ rweb = {
 
 		hosts = hosts.split(',');
 		return hosts.some(function(subject) {
-			var regex = '^' + subject.trim().replace(/([\.\-])/g, '\\$1').replace(/\*/g, '[^\\.]+') + '$';
+			var regex = '^' + subject
+				.trim()
+				.replace(/([\.\-])/g, '\\$1')
+				.replace(/\*\*/g, '.+')
+				.replace(/\*/g, '[^\\.]+') + '$';
 			return new RegExp(regex).test(host);
 		});
 	},
