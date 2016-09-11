@@ -96,7 +96,7 @@ rweb = {
 	},
 
 	sites: function(host, callback, options) {
-		console.time('rweb.sites ("' + host + '")');
+		// console.time('rweb.sites ("' + host + '")');
 		chrome.storage.local.get(['sites', 'dirty', 'disabled', 'lastDownload', 'downloadingSince'], function(items) {
 			var dirty = Boolean(items.dirty);
 			var disabled = host && items.disabled && items.disabled[host] ? true : false;
@@ -133,7 +133,7 @@ rweb = {
 			}
 
 			if ( host && !meta.disabled ) {
-				console.timeEnd('rweb.sites ("' + host + '")');
+				// console.timeEnd('rweb.sites ("' + host + '")');
 			}
 			callback(sites, meta);
 		});
@@ -166,7 +166,7 @@ rweb = {
 			});
 
 			if ( !meta.disabled ) {
-				console.debug('- sites: ' + sites.length + ', specific: ' + specific + ', wildcard: ' + wildcard);
+				// console.debug('- sites: ' + sites.length + ', specific: ' + specific + ', wildcard: ' + wildcard);
 			}
 
 			var site = {

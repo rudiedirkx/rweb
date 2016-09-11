@@ -6,6 +6,11 @@
 if ( document.documentElement && document.documentElement.nodeName == 'HTML' && location.protocol != 'chrome-extension:' ) {
 	var host = rweb.host(location.host);
 	rweb.site(host, function(site, meta) {
+
+		var specific = site ? site.specific : 0;
+		var wildcard = site ? site.wildcard : 0;
+		document.documentElement.dataset.rweb = host + '/' + specific + '/' + wildcard;
+
 		if ( site && !meta.disabled ) {
 			// Save stats
 			if ( site.specific ) {
