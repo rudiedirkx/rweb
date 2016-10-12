@@ -162,8 +162,9 @@ rweb.ui = {
 	},
 	buildSites: function(callback) {
 		rweb.sites(null, function(sites) {
+			var tpl = $newSite.getHTML();
 			sites.each(function(site) {
-				var $tbody = document.el('tbody').setHTML($newSite.getHTML()).injectAfter($table.getFirst());
+				var $tbody = document.el('tbody').setHTML(tpl).injectBefore($newSite);
 				$tbody.data('host', site.host);
 				$tbody.data('id', site.id);
 				$tbody.setNamedElementValues(site, true);
