@@ -95,6 +95,16 @@ rweb = {
 		});
 	},
 
+	siteSorter: function(a, b) {
+		if (a.host == 'all') return 1;
+		else if (b.host == 'all') return -1;
+		else if (a.host == 'matches') return 1;
+		else if (b.host == 'matches') return -1;
+		else if (a.host == 'options') return 1;
+		else if (b.host == 'options') return -1;
+		else return a.host < b.host ? 1 : -1;
+	},
+
 	sites: function(host, callback, options) {
 		// console.time('rweb.sites ("' + host + '")');
 		chrome.storage.local.get(['sites', 'dirty', 'disabled', 'lastDownload', 'downloadingSince'], function(items) {
@@ -114,22 +124,15 @@ rweb = {
 			if ( host ) {
 				sites = rweb.hostFilter(sites, host, options);
 
+				sites.sort(rweb.siteSorter);
+
 				meta.special = sites.reduce(function(special, site) {
 					return special + Number(site.host == 'all' || site.host == 'matches');
 				}, 0);
-
 			}
 			// No query, so sort and no filter
 			else {
-				sites.sort(function(a, b) {
-					if (a.host == 'all') return 1;
-					else if (b.host == 'all') return -1;
-					else if (a.host == 'matches') return 1;
-					else if (b.host == 'matches') return -1;
-					else if (a.host == 'options') return 1;
-					else if (b.host == 'options') return -1;
-					else return a.host < b.host ? 1 : -1;
-				});
+				sites.sort(rweb.siteSorter);
 			}
 
 			if ( host && !meta.disabled ) {
