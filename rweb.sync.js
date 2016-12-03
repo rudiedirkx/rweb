@@ -115,21 +115,15 @@ rweb.sync = {
 		callback(summary);
 	},
 
-	connect: function(callback, silent) {
-		var interactive = !silent;
+	connect: function(interactive, callback) {
 		chrome.identity.getAuthToken({interactive: interactive}, function(token) {
 			if ( token ) {
 				callback(token);
 			}
 			else {
-				console.warn("chrome.identity.getAuthToken() didn't return a token!");
-				if ( chrome.runtime.lastError ) {
-					console.warn(chrome.runtime.lastError);
-				}
+				console.warn("chrome.identity.getAuthToken() didn't return a token!", chrome.runtime.lastError);
 
-				if ( silent === 2 ) {
-					callback(false);
-				}
+				callback(false);
 			}
 		});
 	},
@@ -156,7 +150,7 @@ rweb.sync = {
 			});
 		};
 
-		rweb.sync.connect(function(token) {
+		rweb.sync.connect(false, function(token) {
 			// Save `downloadingSince` to avoid multi-downloading
 			chrome.storage.local.set({downloadingSince: Date.now()});
 
@@ -186,7 +180,7 @@ rweb.sync = {
 					});
 				}
 			}); // drive.list()
-		}, silent); // connect()
+		}); // connect()
 	},
 	upload: function(callback, silent) {
 		var summary = {
@@ -194,7 +188,7 @@ rweb.sync = {
 		};
 
 		var start = function() {
-			rweb.sync.connect(function(token) {
+			rweb.sync.connect(false, function(token) {
 				rweb.sync.drive.list(token, function(rsp) {
 					// File exists, overwrite
 					if ( rsp.items.length ) {
@@ -208,7 +202,7 @@ rweb.sync = {
 						});
 					}
 				}); // drive.list()
-			}, silent); // connect()
+			}); // connect()
 		};
 
 		var upload = function(token, file) {
@@ -240,7 +234,7 @@ console.debug(type + ':status', status);
 
 				// Unauthorized
 				if ( status == 401 ) {
-					rweb.sync.connect(function(token) {
+					rweb.sync.connect(false, function(token) {
 						chrome.identity.removeCachedAuthToken({token: token}, function() {
 							alert("Authentication error during '" + type + "'. Try again after this reload.");
 							location.reload();

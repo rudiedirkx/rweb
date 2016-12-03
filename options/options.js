@@ -141,7 +141,7 @@ rweb.ui = {
 
 			document.body.removeClass('loading');
 
-			$$('tfoot input:not([data-disabled])').attr('disabled', null);
+			$$('tfoot button:not([data-disabled])').prop('disabled', false);
 
 			chrome.runtime.sendMessage({optionsOpened: true}, function(response) {
 				// No relevant response
@@ -479,19 +479,26 @@ rweb.ui = {
 		});
 
 		// Enable buttons only if SYNC is enabled
-		rweb.sync.connect(function(token) {
+		rweb.sync.connect(false, function(token) {
 			if ( token ) {
 				$$('#btn-download, #btn-upload').prop('disabled', false);
 				document.body.addClass('sync-enabled');
 			}
-		}, 2);
+		});
 
 		$('btn-connect2drive').on('click', function(e) {
 			e.preventDefault();
 
-			rweb.sync.connect(function(token) {
-				alert('Done! Now download and upload manually once, and then it will be automatic.');
-				location.reload();
+			var btn = this;
+			btn.addClass('loading');
+			rweb.sync.connect(true, function(token) {
+				if (token) {
+					alert('Done! Now download and upload manually once, and then it will be automatic.');
+					location.reload();
+				}
+				else {
+					btn.removeClass('loading');
+				}
 			});
 		});
 

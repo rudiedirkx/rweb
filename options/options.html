@@ -33,7 +33,7 @@ Will still take up space when disabled.">
 				<td class="content">
 					<input name="id" type="hidden" />
 					<div class="relative">
-						<input name="host" class="host el-host" placeholder="Hosts / domains. Without WWW! Use comma to separate more. Use * for all websites. Use 'options' to target this page." />
+						<input name="host" class="host el-host" placeholder="Hosts / domains. Without WWW! Use comma to separate more. Use 'all' for all websites. Use 'options' to target this page." />
 						<span hidden class="el-metadata">(CSS: <span class="el-meta-css">0 kb</span>, JS: <span class="el-meta-js">0 kb</span>, matched: <span class="el-meta-matched">0</span>x)</span>
 					</div>
 				</td>
@@ -49,7 +49,8 @@ Will still take up space when disabled.">
 			<tr>
 				<th>JS</th>
 				<td class="content">
-					<textarea name="js" rows="4" class="code expands js el-js" placeholder="Script is executed immediately (when readyState is 'loading'). Use ready(Function callback) for domready and load(Function callback) for window onload to time your script. For example:
+					<textarea name="js" rows="4" class="code expands js el-js" placeholder="// Script is executed immediately (when readyState is 'loading').
+// Use ready(Function callback) for domready and load(Function callback) for window onload to time your script. For example:
 
 ready(function() {
 	// All the HTML and CSS and JS exist
@@ -67,16 +68,18 @@ load(function() {
 		<tfoot>
 			<tr>
 				<td class="actions" colspan="2">
-					<input type="submit" value="Save" disabled />
-					<input type="reset" value="Reset" disabled />
+					<button class="submit" disabled>Save</button>
 					&nbsp;
-					<input type="button" value="Export" id="btn-export" disabled />
-					<input type="button" value="Import" id="btn-import" disabled />
+					<button id="btn-export" disabled>Export</button>
+					<button id="btn-import" disabled>Import</button>
 					&nbsp;
-					<input type="button" value="Stats" id="btn-stats" disabled data-disabled title="Prints of a bunch of (mostly local) stats to the Console." />
-					<input type="button" value="Blacklist" id="btn-disabled" disabled title="Edit your disabled sites. Might induce a disabled-state delay on the relevant website." />
+					<button id="btn-stats" disabled data-disabled title="Prints of a bunch of (mostly local) stats to the Console.">Stats</button>
+					<button id="btn-disabled" disabled title="Edit your disabled sites. Might induce a disabled-state delay on the relevant website.">Blacklist</button>
 					&nbsp;
-					<input type="button" value="Connect to Google Drive" id="btn-connect2drive" disabled />
+					<button id="btn-connect2drive" disabled>
+						Connect to Google Drive
+						<img class="loading" src="loading16.gif" alt="[LOADING]" />
+					</button>
 					<button id="btn-download" disabled data-disabled title="Manually download sites from your GDrive.">
 						DOWNLOAD
 						<img class="loading" src="loading16.gif" alt="[LOADING]" />
@@ -86,9 +89,9 @@ load(function() {
 						<img class="loading" src="loading16.gif" alt="[LOADING]" />
 					</button>
 					&nbsp;
-					<input type="button" value="Sync log" id="btn-sync-log" disabled />
+					<button id="btn-sync-log" disabled>Sync log</button>
 					&nbsp;
-					<input type="button" value="Search" id="btn-search" disabled />
+					<button id="btn-search" disabled>Search</button>
 				</td>
 			</tr>
 		</tfoot>
