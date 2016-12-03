@@ -21,6 +21,7 @@
 			<tr>
 				<th>Enable</th>
 				<th align="left">Special: <code>all</code>, <code>matches</code>, <code>options</code></th>
+				<th></th>
 			</tr>
 		</thead>
 		<tbody class="new-site">
@@ -37,10 +38,13 @@ Will still take up space when disabled.">
 						<span hidden class="el-metadata">(CSS: <span class="el-meta-css">0 kb</span>, JS: <span class="el-meta-js">0 kb</span>, matched: <span class="el-meta-matched">0</span>x)</span>
 					</div>
 				</td>
+				<td class="group">
+					<select name="group"><option value="">--</option></select>
+				</td>
 			</tr>
 			<tr>
 				<th>CSS</th>
-				<td class="content">
+				<td class="content" colspan="2">
 					<textarea name="css" rows="4" class="code expands css el-css" placeholder="body, p {
 	line-height: 1.4; /* px line-height are evil! */
 }"></textarea>
@@ -48,7 +52,7 @@ Will still take up space when disabled.">
 			</tr>
 			<tr>
 				<th>JS</th>
-				<td class="content">
+				<td class="content" colspan="2">
 					<textarea name="js" rows="4" class="code expands js el-js" placeholder="// Script is executed immediately (when readyState is 'loading').
 // Use ready(Function callback) for domready and load(Function callback) for window onload to time your script. For example:
 
@@ -67,7 +71,7 @@ load(function() {
 		</tbody>
 		<tfoot>
 			<tr>
-				<td class="actions" colspan="2">
+				<td class="actions" colspan="3">
 					<button class="submit" disabled>Save</button>
 					&nbsp;
 					<button id="btn-export" disabled>Export</button>

@@ -36,6 +36,7 @@ textarea {
 #sites input:not([type=submit]):not([type=button]):not([type=reset]),
 #sites textarea,
 #sites select {
+	line-height: 1;
 	padding: 15px;
 	background: transparent;
 	border: solid 0 #bbb;
@@ -150,6 +151,16 @@ p[data-notifid].read {
 #sites td.enabled,
 #sites td.sync {
 	text-align: center;
+}
+#sites td.group select {
+	padding-left: 5px;
+	padding-right: 5px;
+	width: calc(1em + 30px);
+	-webkit-appearance: none;
+	cursor: pointer;
+}
+#sites td.group option {
+	color: black !important;
 }
 #sites td.content {
 	width: 100%;

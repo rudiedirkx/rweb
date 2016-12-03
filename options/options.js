@@ -110,7 +110,7 @@ rweb.ui = {
 			if ( location.hash.length > 1 ) {
 				var host = rweb.host(location.hash.substr(1));
 
-				// Hilite ass matching sites
+				// Hilite matching sites
 				$$('.el-host').each(function(el) {
 					if (rweb.hostsMatch(el.value, host, {exact: true})) {
 						el.ancestor('tbody').addClass('hilited');
@@ -162,7 +162,19 @@ rweb.ui = {
 	},
 	buildSites: function(callback) {
 		rweb.sites(null, function(sites) {
+			// Collect groups
+			var groups = [];
+			sites.each(function(site) {
+				if (site.group && groups.indexOf(site.group) == -1) {
+					groups.push(site.group);
+				}
+			});
+
+			// Inject groups into newSite for auto-copy to all the rest
+			$newSite.getElement('.group > select').innerHTML += groups.map(group => '<option value="' + group + '">' + group + '</option>').join();
+
 			var tpl = $newSite.getHTML();
+
 			sites.each(function(site) {
 				var $tbody = document.el('tbody').setHTML(tpl).injectBefore($newSite);
 				$tbody.data('host', site.host);
@@ -199,12 +211,6 @@ rweb.ui = {
 	},
 	addListeners: function() {
 
-		window.on('beforeunload', function(e) {
-			if ( rweb.ui.dirty() ) {
-				return "You have unsaved changes. Leaving this page will discard those changes.";
-			}
-		});
-
 		$sites
 			// Open site
 			.on('focus', '.el-host', function(e) {
@@ -224,6 +230,21 @@ rweb.ui = {
 			.on('change', '.el-enabled', rweb.ui.onendisable = function(e) {
 				var tbody = this.ancestor('tbody');
 				tbody.enabledOrDisabledClass();
+			})
+
+			// Create new group
+			.on('contextmenu', '.group > select', function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+
+				var group = prompt('New group?', '');
+				if ( group ) {
+					var option = document.el('option', {"value": group}).setText(group);
+					this.appendChild(option);
+					this.value = group;
+
+					$sites.addClass('dirty');
+				}
 			})
 
 			// Close site
@@ -860,11 +881,11 @@ document.body.onload = function() {
 	});
 
 	// Upload when closing options page
-	window.onbeforeunload = function() {
+	window.on('beforeunload', function(e) {
 		chrome.runtime.sendMessage({optionsClosed: true}, function(response) {
 			// This tab is gone already
 		});
-	};
+	});
 
 	// Init
 	rweb.ui.init();
