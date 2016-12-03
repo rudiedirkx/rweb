@@ -254,7 +254,7 @@ console.debug(type + ':status', status);
 				// Any error
 				else {
 					console.error('RESPONSE:', this.responseText);
-					alert("Unrecoverable error during '" + type + "'. Check console for details.");
+					// alert("Unrecoverable error during '" + type + "'. Check console for details.");
 				}
 			};
 		},
@@ -269,7 +269,7 @@ console.debug(type + ':data', rsp);
 		wrapError: function(type) {
 			return function(e) {
 				console.warn(type + ':error', this, e);
-				alert('There was an error connecting to Drive. Check the console.');
+				// alert('There was an error connecting to Drive. Check the console.');
 			};
 		},
 		list: function(token, callback) {
