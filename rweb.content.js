@@ -27,7 +27,12 @@ if ( document.documentElement && document.documentElement.nodeName == 'HTML' && 
 				if ( !meta.dirty ) {
 					console.log('[RWeb] WILL START AUTO-DOWNLOAD NOW! See background script for log.');
 					chrome.runtime.sendMessage({forceAutoDownload: true}, function(response) {
-						console.log('[RWeb] DOWNLOADED SITES!');
+						if (response && response.imported) {
+							console.log('[RWeb] DOWNLOADED SITES!');
+						}
+						else {
+							console.warn('[RWeb] NOT DOWNLOADED...', response);
+						}
 					});
 				}
 				else {

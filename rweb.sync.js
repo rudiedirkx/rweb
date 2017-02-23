@@ -151,6 +151,10 @@ rweb.sync = {
 		};
 
 		rweb.sync.connect(false, function(token) {
+			if (!token) {
+				return callback({imported: false, unconnected: true});
+			}
+
 			// Save `downloadingSince` to avoid multi-downloading
 			chrome.storage.local.set({downloadingSince: Date.now()});
 

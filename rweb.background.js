@@ -174,13 +174,15 @@ chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	// Forced auto-download from content script
 	if ( msg && msg.forceAutoDownload ) {
 		rweb.sync.download(function(summary) {
-			rweb.log('download', true, summary.changes, function() {
-				// Log saved
-			});
+			if ( summary.imported ) {
+				rweb.log('download', true, summary.changes, function() {
+					// Log saved
+				});
+			}
 
-			// This one doesn't reach the content script for some reason... Too async?
 			sendResponse(summary);
 		}, true);
+		return true;
 	}
 
 	// Options page closed
