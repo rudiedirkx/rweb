@@ -65,6 +65,9 @@ Element.extend({
 		this.removeClass('checked').removeClass('unchecked').addClass(cb.checked ? 'checked' : 'unchecked');
 	},
 });
+Element.prototype.scrollIntoViewIfNeeded || Element.extend({
+	scrollIntoViewIfNeeded: Element.prototype.scrollIntoView,
+});
 
 
 
@@ -95,6 +98,9 @@ rweb.ui = {
 		// // BUILD SITES
 		rweb.ui.buildSites(function(sites) {
 			rweb.ui.addListeners();
+
+			// Firefox remembers form state after a manual refresh...
+			$sites.reset();
 
 			// Auto indenting of code textareas
 			rweb.ui.getPrefs(function(prefs) {
@@ -143,7 +149,7 @@ rweb.ui = {
 
 			$$('tfoot button:not([data-disabled])').prop('disabled', false);
 
-			chrome.runtime.sendMessage({optionsOpened: true}, function(response) {
+			rweb.browser.runtime.sendMessage({optionsOpened: true}, function(response) {
 				// No relevant response
 			});
 		});
@@ -155,7 +161,7 @@ rweb.ui = {
 	},
 	getPrefs: function(callback) {
 		var prefs = $prefs.getNamedElementValues();
-		chrome.storage.local.get(Object.keys(prefs), callback);
+		rweb.browser.storage.local.get(Object.keys(prefs), callback);
 	},
 	dirty: function() {
 		return rweb.ui._state != JSON.encode(rweb.ui.settings());
@@ -401,7 +407,7 @@ rweb.ui = {
 		rweb.ui.getPrefs(function(items) {
 			if ( items.inlineStats && parseInt(items.inlineStats) ) {
 				requestAnimationFrame(tickUpdateMetaDataLocation);
-				chrome.storage.local.get('history', function(items) {
+				rweb.browser.storage.local.get('history', function(items) {
 					history = items.history || {};
 
 					$sites.getElements('tbody').forEach(function($site) {
@@ -427,7 +433,7 @@ rweb.ui = {
 				console.log('Manual download done');
 				if ( summary.imported ) {
 					rweb.log('download', false, summary.changes, function() {
-						location.reload();
+						location.reload(true);
 					});
 				}
 				btn.removeClass('loading');
@@ -460,7 +466,7 @@ rweb.ui = {
 			});
 		});
 
-		chrome.storage.local.get(['dirty', 'lastUpload', 'lastDownload'], function(items) {
+		rweb.browser.storage.local.get(['dirty', 'lastUpload', 'lastDownload'], function(items) {
 			var uploadTitle = [];
 			if ( items.dirty ) {
 				$('btn-upload').addClass('dirty');
@@ -479,12 +485,16 @@ rweb.ui = {
 		});
 
 		// Enable buttons only if SYNC is enabled
-		rweb.sync.connect(false, function(token) {
-			if ( token ) {
-				$$('#btn-download, #btn-upload').prop('disabled', false);
-				document.body.addClass('sync-enabled');
-			}
-		});
+		if (rweb.sync) {
+			$('btn-connect2drive').disabled = false;
+
+			rweb.sync.connect(false, function(token) {
+				if ( token ) {
+					$$('#btn-download, #btn-upload').prop('disabled', false);
+					document.body.addClass('sync-enabled');
+				}
+			});
+		}
 
 		$('btn-connect2drive').on('click', function(e) {
 			e.preventDefault();
@@ -494,7 +504,7 @@ rweb.ui = {
 			rweb.sync.connect(true, function(token) {
 				if (token) {
 					alert('Done! Now download and upload manually once, and then it will be automatic.');
-					location.reload();
+					location.reload(true);
 				}
 				else {
 					btn.removeClass('loading');
@@ -516,7 +526,7 @@ rweb.ui = {
 				$form.scrollIntoViewIfNeeded();
 
 				var $ta = $('ta-sync-log');
-				chrome.storage.local.get('log', function(items) {
+				rweb.browser.storage.local.get('log', function(items) {
 					var logs = items.log || [];
 
 					var rpad = function(str, len) {
@@ -602,7 +612,7 @@ rweb.ui = {
 			rweb.sync.import(newSites, function(summary) {
 				if ( summary.imported ) {
 					rweb.log('import', false, summary.changes, function() {
-						location.reload();
+						location.reload(true);
 					});
 				}
 			}, {
@@ -620,7 +630,7 @@ rweb.ui = {
 		$('btn-disabled').on('click', function(e) {
 			e.preventDefault();
 
-			chrome.storage.local.get('disabled', function(items) {
+			rweb.browser.storage.local.get('disabled', function(items) {
 				var disabled = items.disabled || {},
 					hosts = Object.keys(disabled);
 
@@ -646,7 +656,7 @@ rweb.ui = {
 				disabled[host] = true;
 			});
 
-			chrome.storage.local.set({"disabled": disabled}, function() {
+			rweb.browser.storage.local.set({"disabled": disabled}, function() {
 				$form.addClass('saved');
 				setTimeout(function() {
 					$form.removeClass('saved');
@@ -759,7 +769,7 @@ rweb.ui = {
 
 			var prefs = this.getNamedElementValues(true);
 
-			chrome.storage.local.set(prefs, function() {
+			rweb.browser.storage.local.set(prefs, function() {
 				$prefs.addClass('saved');
 				setTimeout(function() {
 					$prefs.removeClass('saved');
@@ -770,12 +780,12 @@ rweb.ui = {
 	}, // addListeners()
 
 	propagateNewCSS: function(updatedHosts) {
-		chrome.storage.local.get(['disabled'], function(items) {
+		rweb.browser.storage.local.get(['disabled'], function(items) {
 			var disabled = items.disabled || {};
 			var sites = rweb.ui.settings();
 			var counter = {};
 
-			chrome.tabs.query({}, function(tabs) {
+			rweb.browser.tabs.query({}, function(tabs) {
 				tabs.forEach(function(tab) {
 					var host = rweb.host(tab.url);
 
@@ -790,7 +800,7 @@ rweb.ui = {
 						var count = counter[host];
 
 						console.time('[RWeb] Propagated new CSS to "' + host + '" (' + count + ')');
-						chrome.tabs.sendMessage(tab.id, {cssUpdate: css}, function(rsp) {
+						rweb.browser.tabs.sendMessage(tab.id, {cssUpdate: css}, function(rsp) {
 							console.timeEnd('[RWeb] Propagated new CSS to "' + host + '" (' + count + ')');
 						});
 					}
@@ -820,7 +830,7 @@ document.body.onload = function() {
 					finish = function() {
 						localStorage.version -= -update;
 						alert("DONE! I will now reload, ready to go.");
-						location.reload();
+						location.reload(true);
 					}
 				;
 
@@ -861,7 +871,7 @@ document.body.onload = function() {
 
 	// Upload when closing options page
 	window.onbeforeunload = function() {
-		chrome.runtime.sendMessage({optionsClosed: true}, function(response) {
+		rweb.browser.runtime.sendMessage({optionsClosed: true}, function(response) {
 			// This tab is gone already
 		});
 	};

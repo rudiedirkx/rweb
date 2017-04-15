@@ -26,7 +26,7 @@ if ( document.documentElement && document.documentElement.nodeName == 'HTML' && 
 			if ( !meta.downloadingSince || meta.downloadingSince < Date.now() - 10000 ) {
 				if ( !meta.dirty ) {
 					console.log('[RWeb] WILL START AUTO-DOWNLOAD NOW! See background script for log.');
-					chrome.runtime.sendMessage({forceAutoDownload: true}, function(response) {
+					rweb.browser.runtime.sendMessage({forceAutoDownload: true}, function(response) {
 						if (response && response.imported) {
 							console.log('[RWeb] DOWNLOADED SITES!');
 						}
@@ -52,7 +52,7 @@ if ( document.documentElement && document.documentElement.nodeName == 'HTML' && 
  * Listen for disabling this host/website
  */
 
-chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if ( msg.rweb && 'disabled' in msg.rweb ) {
 		// Immediately update page
 		if ( msg.rweb.disabled ) {
@@ -93,7 +93,7 @@ function doCSSUpdate(css) {
 	rweb.css(css);
 }
 
-chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	if ( msg && !sender.tab && 'cssUpdate' in msg ) {
 		var css = msg.cssUpdate;
 		doCSSUpdate(css);

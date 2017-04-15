@@ -167,6 +167,7 @@ p[data-notifid].read {
 #sites textarea.code {
 	width: 100%;
 	display: block;
+	-moz-tab-size: 4;
 	tab-size: 4;
 	resize: vertical;
 	overflow: hidden;

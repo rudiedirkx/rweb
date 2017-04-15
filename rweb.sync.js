@@ -1,4 +1,4 @@
-rweb.sync = {
+rweb.identity && (rweb.sync = {
 
 	import: function(newSites, callback, options) {
 		var summary = {
@@ -116,12 +116,12 @@ rweb.sync = {
 	},
 
 	connect: function(interactive, callback) {
-		chrome.identity.getAuthToken({interactive: interactive}, function(token) {
+		rweb.browser.identity.getAuthToken({interactive: interactive}, function(token) {
 			if ( token ) {
 				callback(token);
 			}
 			else {
-				console.warn("chrome.identity.getAuthToken() didn't return a token!", chrome.runtime.lastError);
+				console.warn("rweb.browser.identity.getAuthToken() didn't return a token!", rweb.browser.runtime.lastError);
 
 				callback(false);
 			}
@@ -133,10 +133,10 @@ rweb.sync = {
 
 			rweb.sync.import(sites, function(summary) {
 				// Remove `downloadingSince` to enable new downloads
-				chrome.storage.local.remove(['downloadingSince']);
+				rweb.browser.storage.local.remove(['downloadingSince']);
 
 				if ( summary.imported ) {
-					chrome.storage.local.set({lastDownload: Date.now(), dirty: false}, function() {
+					rweb.browser.storage.local.set({lastDownload: Date.now(), dirty: false}, function() {
 						console.log('Saved `lastDownload`.');
 						callback(summary);
 					});
@@ -156,7 +156,7 @@ rweb.sync = {
 			}
 
 			// Save `downloadingSince` to avoid multi-downloading
-			chrome.storage.local.set({downloadingSince: Date.now()});
+			rweb.browser.storage.local.set({downloadingSince: Date.now()});
 
 			rweb.sync.drive.list(token, function(rsp) {
 				// File exists, download data
@@ -211,14 +211,14 @@ rweb.sync = {
 
 		var upload = function(token, file) {
 			rweb.sync.drive.upload(token, file.id, function(data) {
-				chrome.storage.local.set({lastUpload: Date.now(), lastDownload: Date.now()}, function() {
+				rweb.browser.storage.local.set({lastUpload: Date.now(), lastDownload: Date.now()}, function() {
 					console.log('Saved `lastUpload` and `lastDownload`.');
 					callback(summary);
 				});
 			});
 		};
 
-		chrome.storage.local.get('dirty', function(items) {
+		rweb.browser.storage.local.get('dirty', function(items) {
 			summary.dirty = Boolean(items.dirty == null || items.dirty);
 
 			// Manual upload, always. Auto upload, only if dirty
@@ -239,9 +239,9 @@ console.debug(type + ':status', status);
 				// Unauthorized
 				if ( status == 401 ) {
 					rweb.sync.connect(false, function(token) {
-						chrome.identity.removeCachedAuthToken({token: token}, function() {
+						rweb.browser.identity.removeCachedAuthToken({token: token}, function() {
 							alert("Authentication error during '" + type + "'. Try again after this reload.");
-							location.reload();
+							location.reload(true);
 						});
 					});
 				}
@@ -289,7 +289,7 @@ console.debug(type + ':data', rsp);
 			var data = {
 				"title": "rweb.sites.json",
 				"mimeType": "text/json",
-				"description": "All RWeb configured sites for " + chrome.runtime.id,
+				"description": "All RWeb configured sites for " + rweb.browser.runtime.id,
 			};
 			xhr.send(JSON.stringify(data));
 		},
@@ -299,13 +299,13 @@ console.debug(type + ':data', rsp);
 			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
 			xhr.setRequestHeader('Content-Type', 'application/json');
 			xhr.onload = rweb.sync.drive.wrapCallback('upload', function(rsp) {
-				chrome.storage.local.set({dirty: false}, function() {
+				rweb.browser.storage.local.set({dirty: false}, function() {
 					callback(rsp);
 				});
 			});
 			xhr.onerror = rweb.sync.drive.wrapError('upload');
 
-			chrome.storage.local.get(['sites'], function(items) {
+			rweb.browser.storage.local.get(['sites'], function(items) {
 				var sites = items.sites || [];
 console.debug('upload:output', sites);
 				xhr.send(JSON.stringify(sites));
@@ -333,4 +333,4 @@ console.debug('download:load', this, e);
 			xhr.send();
 		}
 	}
-};
+});

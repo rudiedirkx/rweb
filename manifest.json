@@ -19,6 +19,7 @@
 		"scripts": [ "rweb.helpers.js", "rweb.sync.js", "rweb.background.js" ]
 	},
 	"browser_action": {
+		"browser_style": false,
 		"default_title": "RWeb - Edit custom CSS/JS",
 		"default_icon": {
 			"38": "images/38x38.png",
