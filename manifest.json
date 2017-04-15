@@ -27,6 +27,12 @@
 		}
 	},
 
+	"applications": {
+		"gecko": {
+			"id": "rweb@hotblocks.nl"
+		}
+	},
+
 	"oauth2": {
 		"dev_client_id": "346127871184-hi1jj6g6btohao07msv0fub3dl74lfei.apps.googleusercontent.com",
 		"live_client_id": "559705211499-5c5ul38obg7epc9n71626dqavikoiuvj.apps.googleusercontent.com",
