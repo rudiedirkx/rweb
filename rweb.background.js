@@ -190,7 +190,7 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	}
 
 	// Options page closed
-	if ( msg && msg.optionsClosed ) {
+	if ( msg && msg.optionsClosed && rweb.sync ) {
 		optionsClosedTimer = setTimeout(function() {
 			console.log('Uploading automatically, because options page closed');
 			rweb.sync.upload(function(summary) {
