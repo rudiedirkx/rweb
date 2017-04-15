@@ -207,7 +207,7 @@ rweb.ui = {
 
 		window.on('beforeunload', function(e) {
 			if ( rweb.ui.dirty() ) {
-				return "You have unsaved changes. Leaving this page will discard those changes.";
+				e.preventDefault();
 			}
 		});
 
@@ -871,11 +871,11 @@ document.body.onload = function() {
 	});
 
 	// Upload when closing options page
-	window.onbeforeunload = function() {
+	window.on('beforeunload', function(e) {
 		rweb.browser.runtime.sendMessage({optionsClosed: true}, function(response) {
 			// This tab is gone already
 		});
-	};
+	});
 
 	// Init
 	rweb.ui.init();
