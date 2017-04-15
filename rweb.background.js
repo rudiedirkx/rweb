@@ -149,7 +149,11 @@ rweb.browser.browserAction.onClicked.addListener(function(tab) {
 
 	var uri = rweb.browser.extension.getURL('options/options.html');
 	uri += '#' + host;
-	rweb.browser.tabs.create({url: uri});
+	rweb.browser.tabs.create({
+		url: uri,
+		index: tab.index + 1,
+		// openerTabId: tab.id,
+	});
 });
 
 var optionsClosedTimer;

@@ -94,7 +94,8 @@ function doCSSUpdate(css) {
 }
 
 rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-	if ( msg && !sender.tab && 'cssUpdate' in msg ) {
+	// console.debug('onMessage', msg, sender);
+	if ( msg && msg.cssUpdate != null /*&& !sender.tab*/ ) {
 		var css = msg.cssUpdate;
 		doCSSUpdate(css);
 

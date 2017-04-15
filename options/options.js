@@ -802,6 +802,7 @@ rweb.ui = {
 						console.time('[RWeb] Propagated new CSS to "' + host + '" (' + count + ')');
 						rweb.browser.tabs.sendMessage(tab.id, {cssUpdate: css}, function(rsp) {
 							console.timeEnd('[RWeb] Propagated new CSS to "' + host + '" (' + count + ')');
+							// console.debug('[RWeb] Propagated', rsp);
 						});
 					}
 				});
