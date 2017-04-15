@@ -2,6 +2,11 @@
 rweb = {
 	MUST_DOWNLOAD_EVERY_N_MINUTES: 30,
 
+	// WebExtensions compatibility //
+	browser: typeof browser != 'undefined' ? browser : chrome,
+	identity: (typeof browser != 'undefined' ? browser : chrome).identity,
+	// WebExtensions compatibility //
+
 	// MUST KEEP THIS UP TO DATE //
 	unify: function(site) {
 		// In order of ABC
@@ -38,23 +43,23 @@ rweb = {
 	},
 
 	onBrowserActionClick: function(callback) {
-		chrome.storage.local.get('onBrowserActionClick', function(items) {
+		rweb.browser.storage.local.get('onBrowserActionClick', function(items) {
 			callback(items.onBrowserActionClick || '');
 		});
 	},
 
 	matched: function(host, callback) {
-		chrome.storage.local.get('history', function(items) {
+		rweb.browser.storage.local.get('history', function(items) {
 			var history = items.history || {};
 			history[host] = (history[host] || 0) + 1;
-			chrome.storage.local.set({history: history}, function() {
+			rweb.browser.storage.local.set({history: history}, function() {
 				callback && callback();
 			});
 		});
 	},
 
 	saveSites: function(sites, callback) {
-		chrome.storage.local.set({
+		rweb.browser.storage.local.set({
 			sites: sites,
 			lastSave: Date.now(),
 			dirty: true,
@@ -107,7 +112,7 @@ rweb = {
 
 	sites: function(host, callback, options) {
 		// console.time('rweb.sites ("' + host + '")');
-		chrome.storage.local.get(['sites', 'dirty', 'disabled', 'lastDownload', 'downloadingSince'], function(items) {
+		rweb.browser.storage.local.get(['sites', 'dirty', 'disabled', 'lastDownload', 'downloadingSince'], function(items) {
 			var dirty = Boolean(items.dirty);
 			var disabled = host && items.disabled && items.disabled[host] ? true : false;
 			var sites = items.sites || [];
@@ -209,10 +214,10 @@ rweb = {
 			changes: changes,
 			utc: Date.now(),
 		};
-		chrome.storage.local.get(['log'], function(items) {
+		rweb.browser.storage.local.get(['log'], function(items) {
 			var logs = items.log || [];
 			logs.unshift(log);
-			chrome.storage.local.set({log: logs}, function() {
+			rweb.browser.storage.local.set({log: logs}, function() {
 				callback && callback(logs.length);
 			});
 		});

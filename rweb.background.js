@@ -5,7 +5,7 @@
 			'Re-enable RWeb for DOMAIN',
 		];
 
-	var browserActionMenuItemId = chrome.contextMenus.create({
+	var browserActionMenuItemId = rweb.browser.contextMenus.create({
 		"title": labels[0],
 		"contexts": ['browser_action'],
 		"onclick": function(info, tab) {
@@ -15,7 +15,7 @@
 			var host = rweb.host(tab.url);
 
 			console.time('get & save disabled');
-			chrome.storage.local.get('disabled', function(items) {
+			rweb.browser.storage.local.get('disabled', function(items) {
 				var disabled = items.disabled || {};
 				toggleDisabled(disabled, host, tab);
 			});
@@ -30,7 +30,7 @@
 		if ( !cache[host] ) {
 			delete cache[host];
 		}
-		chrome.storage.local.set({"disabled": cache}, function() {
+		rweb.browser.storage.local.set({"disabled": cache}, function() {
 			console.timeEnd('get & save disabled');
 		});
 
@@ -41,13 +41,13 @@
 		// Update tabs, like options.js does
 		function updateTabs(css) {
 			var message = {"rweb": {"disabled": nowDisabled, "css": css}};
-			chrome.tabs.query({}, function(tabs) {
+			rweb.browser.tabs.query({}, function(tabs) {
 				tabs.forEach(function(tab) {
 					var tabHost = rweb.host(tab.url);
 
 					// Only EXACT matches, no wildcards etc
 					if ( tabHost == host ) {
-						chrome.tabs.sendMessage(tab.id, message, function(rsp) {
+						rweb.browser.tabs.sendMessage(tab.id, message, function(rsp) {
 							// console.log('Sent new status to origin tab', tab.url, rsp);
 						});
 					}
@@ -70,23 +70,23 @@
 		}
 	}
 
-	chrome.tabs.onUpdated.addListener(function(tabId, info, tab) {
+	rweb.browser.tabs.onUpdated.addListener(function(tabId, info, tab) {
 		// console.log('onUpdated', tabId, info, tab);
 		if ( info.status && tab.active ) {
 			updateLabelStatus(tab);
 		}
 	});
 
-	chrome.tabs.onActivated.addListener(function(info) {
+	rweb.browser.tabs.onActivated.addListener(function(info) {
 		// console.log('onActivated', info);
-		chrome.tabs.get(info.tabId, function(tab) {
+		rweb.browser.tabs.get(info.tabId, function(tab) {
 			updateLabelStatus(tab);
 		});
 	});
 
-	chrome.windows.onFocusChanged.addListener(function(windowId) {
-		chrome.windows.get(windowId, {"populate": true}, function(window) {
-			var e = chrome.runtime.lastError; // Shut up, Chrome
+	rweb.browser.windows.onFocusChanged.addListener(function(windowId) {
+		rweb.browser.windows.get(windowId, {"populate": true}, function(window) {
+			var e = rweb.browser.runtime.lastError; // Shut up, Chrome
 			if ( !window ) return;
 			// console.log('onFocusChanged', windowId, window);
 
@@ -103,7 +103,7 @@
 	function updateLabelStatus(tab) {
 		var host = rweb.host(tab.url);
 
-		chrome.storage.local.get('disabled', function(items) {
+		rweb.browser.storage.local.get('disabled', function(items) {
 			var disabled = items.disabled || {};
 			updateLabel(host in disabled, host, tab.id);
 		});
@@ -112,23 +112,23 @@
 	function updateLabel(disabled, host, tabId) {
 		// Update label
 		var newLabel = labels[ Number(disabled) ].replace('DOMAIN', host);
-		chrome.contextMenus.update(browserActionMenuItemId, {"title": newLabel});
+		rweb.browser.contextMenus.update(browserActionMenuItemId, {"title": newLabel});
 
 		// Update badge
 		if ( disabled ) {
 			// Show X on red
-			chrome.browserAction.setBadgeBackgroundColor({
+			rweb.browser.browserAction.setBadgeBackgroundColor({
 				color: [255, 0, 0, 255], // red
 				tabId: tabId,
 			});
-			chrome.browserAction.setBadgeText({
+			rweb.browser.browserAction.setBadgeText({
 				text: 'x',
 				tabId: tabId,
 			});
 		}
 		else {
 			// Hide X
-			chrome.browserAction.setBadgeText({
+			rweb.browser.browserAction.setBadgeText({
 				text: '',
 				tabId: tabId,
 			});
@@ -142,30 +142,34 @@
 	// DEBUG //
 // }
 
-chrome.browserAction.onClicked.addListener(function(tab) {
+rweb.browser.browserAction.onClicked.addListener(function(tab) {
 	var a = document.createElement('a');
 	a.href = tab.url;
 	var host = rweb.host(a.host);
 
-	var uri = chrome.extension.getURL('options/options.html');
+	var uri = rweb.browser.extension.getURL('options/options.html');
 	uri += '#' + host;
-	open(uri);
+	rweb.browser.tabs.create({
+		url: uri,
+		index: tab.index + 1,
+		// openerTabId: tab.id,
+	});
 });
 
 var optionsClosedTimer;
 
-chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	// Content script matched site
 	if ( msg && msg.site ) {
-		chrome.browserAction.getBadgeText({tabId: sender.tab.id}, function(text) {
+		rweb.browser.browserAction.getBadgeText({tabId: sender.tab.id}, function(text) {
 			var num = (parseFloat(text) || 0) + 1;
-			chrome.browserAction.setBadgeText({
+			rweb.browser.browserAction.setBadgeText({
 				text: String(num),
 				tabId: sender.tab.id
 			});
 		});
 
-		chrome.browserAction.setBadgeBackgroundColor({
+		rweb.browser.browserAction.setBadgeBackgroundColor({
 			color: '#000',
 			tabId: sender.tab.id
 		});
