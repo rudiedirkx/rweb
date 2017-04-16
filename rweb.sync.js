@@ -1,4 +1,7 @@
+
 rweb.identity && (rweb.sync = {
+
+	// @todo Fix Drive CORS!? Chrome doesn't have a problem, but Firefox won't accept any Drive resources
 
 	import: function(newSites, callback, options) {
 		var summary = {
@@ -116,15 +119,44 @@ rweb.identity && (rweb.sync = {
 	},
 
 	connect: function(interactive, callback) {
-		rweb.browser.identity.getAuthToken({interactive: interactive}, function(token) {
-			if ( token ) {
-				callback(token);
-			}
-			else {
-				console.warn("rweb.browser.identity.getAuthToken() didn't return a token!", rweb.browser.runtime.lastError);
+		// Chrome
+		if ( rweb.browser.identity.getAuthToken ) {
+			return rweb.browser.identity.getAuthToken({interactive: interactive}, function(token) {
+				if ( token ) {
+					callback(token);
+				}
+				else {
+					console.warn("rweb.browser.identity.getAuthToken() didn't return a token!", rweb.browser.runtime.lastError);
 
-				callback(false);
+					callback(false);
+				}
+			});
+		}
+
+		// WebExtensions (Firefox)
+		var provider = 'https://accounts.google.com/o/oauth2/v2/auth';
+		var clientId = encodeURIComponent(rweb.browser.runtime.getManifest().drive.client_id);
+		var state = encodeURIComponent(Math.random());
+		var scopes = encodeURIComponent(rweb.browser.runtime.getManifest().drive.scope);
+		var redirectUrl = encodeURIComponent(rweb.browser.identity.getRedirectURL());
+		var url = `${provider}?client_id=${clientId}&state=${state}&response_type=token&scope=${scopes}&redirect_uri=${redirectUrl}`;
+		rweb.browser.identity.launchWebAuthFlow({
+			url: url,
+			interactive: interactive,
+		}).then(function(url) {
+			url = new URL(url.replace(/#/g, '?'));
+			var token = url.searchParams.get('access_token');
+console.log('auth access_token', token)
+			if ( token ) {
+				// return rweb.browser.storage.local.set({drive_access_token: token}, function() {
+					return callback(token);
+				// });
 			}
+
+			throw new Error("Can't find `access_token` in response URL");
+		}).catch(function() {
+console.log(`${interactive?'':'non-'}interactive auth failed`);
+			callback(false);
 		});
 	},
 	download: function(callback, silent) {

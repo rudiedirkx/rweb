@@ -33,10 +33,14 @@
 		}
 	},
 
-	"oauth2": {
-		"dev_client_id": "346127871184-hi1jj6g6btohao07msv0fub3dl74lfei.apps.googleusercontent.com",
-		"live_client_id": "559705211499-5c5ul38obg7epc9n71626dqavikoiuvj.apps.googleusercontent.com",
+	"drive": {
+		"live_client_id": "559705211499-uhbgculrp1u2r1q7gips6nljalu9t5vc.apps.googleusercontent.com",
+		"client_id": "346127871184-vucrko27vhi8eu8bqb8uj353ii4v5jnq.apps.googleusercontent.com",
+		"scope": "https://www.googleapis.com/auth/drive.file"
+	},
 
+	"oauth2": {
+		"live_client_id": "559705211499-5c5ul38obg7epc9n71626dqavikoiuvj.apps.googleusercontent.com",
 		"client_id": "346127871184-hi1jj6g6btohao07msv0fub3dl74lfei.apps.googleusercontent.com",
 		"scopes": [
 			"https://www.googleapis.com/auth/drive.file"

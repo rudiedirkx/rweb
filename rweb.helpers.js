@@ -4,7 +4,8 @@ rweb = {
 
 	// WebExtensions compatibility //
 	browser: typeof browser != 'undefined' ? browser : chrome,
-	identity: (typeof browser != 'undefined' ? browser : chrome).identity,
+	// @todo Allow other auth than 'getAuthToken' when Drive CORS is fixed!?
+	identity: ((typeof browser != 'undefined' ? browser : chrome).identity || {}).getAuthToken != null,
 	// WebExtensions compatibility //
 
 	// MUST KEEP THIS UP TO DATE //

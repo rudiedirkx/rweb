@@ -205,12 +205,6 @@ rweb.ui = {
 	},
 	addListeners: function() {
 
-		window.on('beforeunload', function(e) {
-			if ( rweb.ui.dirty() ) {
-				e.preventDefault();
-			}
-		});
-
 		$sites
 			// Open site
 			.on('focus', '.el-host', function(e) {
