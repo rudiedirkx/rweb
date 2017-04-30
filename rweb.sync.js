@@ -134,12 +134,14 @@ rweb.identity && (rweb.sync = {
 		}
 
 		// WebExtensions (Firefox)
+		var manifest = rweb.browser.runtime.getManifest();
 		var provider = 'https://accounts.google.com/o/oauth2/v2/auth';
-		var clientId = encodeURIComponent(rweb.browser.runtime.getManifest().drive.client_id);
+		var clientId = encodeURIComponent(manifest.drive.client_id);
 		var state = encodeURIComponent(Math.random());
-		var scopes = encodeURIComponent(rweb.browser.runtime.getManifest().drive.scope);
+		var scopes = encodeURIComponent(manifest.drive.scope);
 		var redirectUrl = encodeURIComponent(rweb.browser.identity.getRedirectURL());
 		var url = `${provider}?client_id=${clientId}&state=${state}&response_type=token&scope=${scopes}&redirect_uri=${redirectUrl}`;
+console.debug('oauth2 url', url);
 		rweb.browser.identity.launchWebAuthFlow({
 			url: url,
 			interactive: interactive,
@@ -265,11 +267,10 @@ console.log(`${interactive?'':'non-'}interactive auth failed`);
 	drive: {
 		wrapLoad: function(type, body) {
 			return function(e) {
-				var status = parseFloat(this.getResponseHeader('status'));
-console.debug(type + ':status', status);
+console.debug(type + ':status', this.status + ' ' + this.statusText);
 
 				// Unauthorized
-				if ( status == 401 ) {
+				if ( this.status == 401 ) {
 					rweb.sync.connect(false, function(token) {
 						rweb.browser.identity.removeCachedAuthToken({token: token}, function() {
 							alert("Authentication error during '" + type + "'. Try again after this reload.");
@@ -278,7 +279,7 @@ console.debug(type + ':status', status);
 					});
 				}
 				// Success
-				else if ( status >= 200 && status < 400 ) {
+				else if ( this.status >= 200 && this.status < 400 ) {
 					body.call(this, e);
 				}
 				// Any error

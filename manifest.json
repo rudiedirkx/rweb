@@ -4,7 +4,7 @@
 	"version": "1.23",
 	"key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC1FCajQz8TcEsVum4AKd7bAfyjJSj9F7FuNFZIm1KTb5aVRIbUDD9joB3BZUzYzmW5BdkdYIaRMTP2bAramq9ep2eUHF3YbAPC24BrEbEKGnuPQDyHgN5pL/VFSzpYNA8Q9DfhzG10xpcNCivOdmLlA9fB4ugBpKhHntcZOrsCvQIDAQAB",
 
-	"permissions": [ "storage", "tabs", "contextMenus", "identity" ],
+	"permissions": [ "storage", "tabs", "contextMenus", "identity", "<all_urls>" ],
 
 	"options_page": "options/options.html",
 	"content_scripts": [
