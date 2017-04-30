@@ -211,7 +211,7 @@ console.log(`${interactive?'':'non-'}interactive auth failed`);
 				}
 				// File doesn't exist, create and upload
 				else {
-					rweb.sync.drive.create(token, function(file) {
+					rweb.sync.drive.createFile(token, function(file) {
 						rweb.sync.drive.upload(token, file.id, function(data) {
 							handler(data);
 						});
@@ -235,7 +235,7 @@ console.log(`${interactive?'':'non-'}interactive auth failed`);
 					}
 					// File doesn't exist, create & upload
 					else {
-						rweb.sync.drive.create(token, function(file) {
+						rweb.sync.drive.createFile(token, function(file) {
 							upload(token, file);
 						});
 					}
@@ -307,17 +307,66 @@ console.debug(type + ':data', rsp);
 			var xhr = new XMLHttpRequest;
 			xhr.open('GET', 'https://www.googleapis.com/drive/v2/files', true);
 			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-			xhr.onload = rweb.sync.drive.wrapCallback('list', callback);
+			xhr.onload = rweb.sync.drive.wrapCallback('list', function(rsp) {
+				// Immediately go on with processing
+				callback(rsp);
+
+				// See if the RWeb file is in its own folder yet, or move it
+				var file = rsp.items[0];
+				setTimeout(function() {
+					rweb.sync.drive.moveToFolder(token, file);
+				}, 1000);
+			});
 			xhr.onerror = rweb.sync.drive.wrapError('list');
 			xhr.send();
 		},
-		create: function(token, callback) {
+		moveToFolder: function(token, file) {
+			if ( file && file.parents.length == 1 && file.parents[0].isRoot ) {
+				console.debug('[RWeb folder] Creating custom folder for RWeb file...');
+				var oldParent = file.parents[0];
+				rweb.sync.drive.createFolder(token, function(newParent) {
+					console.debug('[RWeb folder] Updating RWeb file parents...');
+
+					var query = new URLSearchParams;
+					query.set('addParents', newParent.id);
+					query.set('removeParents', oldParent.id);
+
+					rweb.sync.drive.patch(token, file.id, query, function(file) {
+						console.debug('[RWeb folder] Moved rweb file to its own folder!');
+					});
+				});
+			}
+		},
+		createFolder: function(token, callback) {
 			var xhr = new XMLHttpRequest;
 			xhr.open('POST', 'https://www.googleapis.com/drive/v2/files', true);
 			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
 			xhr.setRequestHeader('Content-Type', 'application/json');
-			xhr.onload = rweb.sync.drive.wrapCallback('create', callback);
-			xhr.onerror = rweb.sync.drive.wrapError('create');
+			xhr.onload = rweb.sync.drive.wrapCallback('createFolder', callback);
+			xhr.onerror = rweb.sync.drive.wrapError('createFolder');
+
+			var data = {
+				"title": 'RWeb (' + rweb.browser.runtime.id + ')',
+				"mimeType": 'application/vnd.google-apps.folder',
+			};
+			xhr.send(JSON.stringify(data));
+		},
+		patch: function(token, fileId, query, callback) {
+			var xhr = new XMLHttpRequest;
+			xhr.open('PATCH', 'https://www.googleapis.com/drive/v2/files/' + fileId + '?' + query, true);
+			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.onload = rweb.sync.drive.wrapCallback('createFolder', callback);
+			xhr.onerror = rweb.sync.drive.wrapError('createFolder');
+			xhr.send('{}');
+		},
+		createFile: function(token, callback) {
+			var xhr = new XMLHttpRequest;
+			xhr.open('POST', 'https://www.googleapis.com/drive/v2/files', true);
+			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.onload = rweb.sync.drive.wrapCallback('createFile', callback);
+			xhr.onerror = rweb.sync.drive.wrapError('createFile');
 
 			var data = {
 				"title": "rweb.sites.json",
