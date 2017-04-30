@@ -380,16 +380,17 @@ console.debug(type + ':data', rsp);
 			xhr.open('PUT', 'https://www.googleapis.com/upload/drive/v2/files/' + fileId, true);
 			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
 			xhr.setRequestHeader('Content-Type', 'application/json');
-			xhr.onload = rweb.sync.drive.wrapCallback('upload', function(rsp) {
-				rweb.browser.storage.local.set({dirty: false}, function() {
-					callback(rsp);
-				});
-			});
-			xhr.onerror = rweb.sync.drive.wrapError('upload');
 
 			rweb.browser.storage.local.get(['sites'], function(items) {
 				var sites = items.sites || [];
 console.debug('upload:output', sites);
+
+				xhr.onload = rweb.sync.drive.wrapCallback('upload', function(rsp) {
+					rweb.browser.storage.local.set({dirty: false}, function() {
+						callback(sites);
+					});
+				});
+				xhr.onerror = rweb.sync.drive.wrapError('upload');
 				xhr.send(JSON.stringify(sites));
 			});
 		},
