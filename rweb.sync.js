@@ -311,10 +311,11 @@ console.debug(type + ':data', rsp);
 				// Immediately go on with processing
 				callback(file);
 
+				// @todo Doesn't work very well in Firefox, and breaks (drive:list) in unpatched versions
 				// See if the RWeb file is in its own folder yet, or move it
-				setTimeout(function() {
-					rweb.sync.drive.moveToFolder(token, file);
-				}, 1000);
+				// setTimeout(function() {
+				// 	rweb.sync.drive.moveToFolder(token, file);
+				// }, 1000);
 			});
 			xhr.onerror = rweb.sync.drive.wrapError('list');
 			xhr.send();
