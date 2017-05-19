@@ -1,5 +1,5 @@
-// http://rudiedirkx.github.io/rjs/build.html#-ifsetor,-array_intersect,-array_diff,-_classlist,-anyevent_summary,-event_custom_directchange,-element_attr2method,-element_attr2method_html,-element_attr2method_text
-// f185ebc25a44f16d57a3eb399d3730f9a773424b
+// http://rudiedirkx.github.io/rjs/build.html#-ifsetor,-getter,-array_intersect,-array_diff,-array_defaultfilter,-string_camel,-string_repeat,-_classlist,-asset_js,-coords2d,-coords2d_add,-coords2d_subtract,-coords2d_tocss,-coords2d_join,-coords2d_equal,-anyevent_lmrclick,-anyevent_touches,-anyevent_pagexy,-anyevent_summary,-anyevent_subject,-event_custom,-_event_custom_mousenterleave,-event_custom_mousewheel,-event_custom_directchange,-eventable_off,-eventable_globalfire,-element_attr2method,-element_attr2method_html,-element_attr2method_text,-element_position,-element_scroll,-windoc_scroll,-domready,-xhr,-xhr_global
+// b21c1cea8be7a40b2bc74446df9fff304d5383e1
 
 (function(W, D) {
 
@@ -8,13 +8,12 @@
 	var html = D.documentElement,
 		head = html.getElementsByTagName('head')[0];
 
-	var r = function r( id, sel ) {
-		return r.$(id, sel);
+	var r = function r(selector) {
+		return r.$(selector);
 	};
 
 	JSON.encode = JSON.stringify;
 	JSON.decode = JSON.parse;
-	var domReadyAttached = false;
 	var cssDisplays = {};
 	r.arrayish = function(obj) {
 		return obj instanceof Array || ( typeof obj.length == 'number' && typeof obj != 'string' && ( obj[0] !== undefined || obj.length === 0 ) );
@@ -84,7 +83,7 @@
 
 		r.each(Hosts, function(Host) {
 			if ( Super ) {
-				Host.prototype = Super;
+				Host.prototype = new Super.constructor;
 				Host.prototype.constructor = Host;
 			}
 
@@ -101,9 +100,6 @@
 		});
 	};
 
-	r.getter = function(Host, prop, getter) {
-		Object.defineProperty(Host.prototype, prop, {get: getter});
-	};
 	r.extend(Array, {
 		invoke: function(method, args) {
 			var results = [];
@@ -132,48 +128,8 @@
 			return this[this.length-1];
 		}
 	});
-	Array.defaultFilterCallback = function(item) {
-		return !!item;
-	};
-	r.extend(String, {
-		camel: function() {
-			return this.replace(/\-([^\-])/g, function(a, m) {
-				return m.toUpperCase();
-			});
-		},
-		uncamel: function() {
-			return this.replace(/([A-Z])/g, function(a, m) {
-				return '-' + m.toLowerCase();
-			});
-		},
-		repeat: function(num) {
-			return new Array(num+1).join(this);
-		}
-	});
-
 	var indexOf = [].indexOf;
 
-	r.js = function(src) {
-		if ( r.arrayish(src) ) {
-			var evt = new Eventable(src),
-				need = src.length,
-				have = 0,
-				onLoad = function(e) {
-					if ( ++have == need ) {
-						evt.fire('load', e);
-					}
-				},
-				onError = function(e) {
-					evt.fire('error', e);
-				};
-			src.forEach(function(url) {
-				r.js(url).on('load', onLoad).on('error', onError);
-			});
-			return evt;
-		}
-
-		return D.el('script', {src: src, type: 'text/javascript'}).inject(head);
-	};
 	function Elements(source, selector) {
 		this.length = 0;
 		if ( source ) {
@@ -204,33 +160,6 @@
 			return new Elements(this, filter);
 		}
 	}, new Array);
-	function Coords2D(x, y) {
-		this.x = parseFloat(x);
-		this.y = parseFloat(y);
-	}
-	r.extend(Coords2D, {
-		add: function(coords) {
-			return new Coords2D(this.x + coords.x, this.y + coords.y);
-		},
-		subtract: function(coords) {
-			return new Coords2D(this.x - coords.x, this.y - coords.y);
-		},
-		toCSS: function() {
-			return {
-				left: this.x + 'px',
-				top: this.y + 'px'
-			};
-		},
-		join: function(glue) {
-			if ( glue == null ) {
-				glue = ',';
-			}
-			return [this.x, this.y].join(glue);
-		},
-		equal: function(coord) {
-			return this.join() == coord.join();
-		}
-	});
 	function AnyEvent(e) {
 		if ( typeof e == 'string' ) {
 			this.originalEvent = null;
@@ -250,10 +179,6 @@
 		this.ctrl = e.ctrlKey;
 		this.shift = e.shiftKey;
 		this.button = e.button || e.which;
-		this.leftClick = this.button == 1;
-		this.rightClick = this.button == 2;
-		this.middleClick = this.button == 4 || this.button == 1 && this.key == 2;
-		this.leftClick = this.leftClick && !this.middleClick;
 		this.which = this.key || this.button;
 		this.detail = e.detail;
 
@@ -262,18 +187,6 @@
 		this.clientX = e.clientX;
 		this.clientY = e.clientY;
 
-		this.touches = e.touches ? r.array(e.touches) : null;
-
-		if ( this.touches && this.touches[0] ) {
-			this.pageX = this.touches[0].pageX;
-			this.pageY = this.touches[0].pageY;
-		}
-		if ( this.pageX != null && this.pageY != null ) {
-			this.pageXY = new Coords2D(this.pageX, this.pageY);
-		}
-		else if ( this.clientX != null && this.clientY != null ) {
-			this.pageXY = new Coords2D(this.clientX, this.clientY).add(W.getScroll());
-		}
 		this.message = e.message;
 		this.data = e.dataTransfer || e.clipboardData;
 		this.time = e.timeStamp || e.timestamp || e.time || Date.now();
@@ -301,43 +214,10 @@
 				e.stopImmediatePropagation();
 			}
 			this.immediatePropagationStopped = true;
-		},
-
-		setSubject: function(subject) {
-			this.subject = subject;
-			if ( this.pageXY ) {
-				this.subjectXY = this.pageXY;
-				if ( this.subject.getPosition ) {
-					this.subjectXY = this.subjectXY.subtract(this.subject.getPosition());
-				}
-			}
 		}
+
 	});
 	Event.Keys = {enter: 13, up: 38, down: 40, left: 37, right: 39, esc: 27, space: 32, backspace: 8, tab: 9, "delete": 46};
-	Event.Custom = {
-		mouseenter: {
-			type: 'mouseover',
-			filter: function(e) {
-				return e.fromElement != this && !this.contains(e.fromElement);
-			}
-		},
-		mouseleave: {
-			type: 'mouseout',
-			filter: function(e) {
-				return e.toElement != this && !this.contains(e.toElement);
-			}
-		},
-		mousewheel: {
-			type: 'onmousewheel' in W ? 'mousewheel' : 'mousescroll'
-		}
-	};
-
-	if ( 'onmouseenter' in html ) {
-		delete Event.Custom.mouseenter;
-	}
-	if ( 'onmouseleave' in html ) {
-		delete Event.Custom.mouseleave;
-	}
 	r.each([
 		W,
 		D,
@@ -366,12 +246,6 @@
 
 			var baseType = eventType,
 				customEvent;
-			if ( customEvent = Event.Custom[eventType] ) {
-				if ( customEvent.type ) {
-					baseType = customEvent.type;
-				}
-			}
-
 			var onCallback = function(e, arg2) {
 				if ( e && !(e instanceof AnyEvent) ) {
 					e = new AnyEvent(e);
@@ -390,9 +264,6 @@
 					}
 				}
 
-				if ( !e.subject ) {
-					e.setSubject(subject);
-				}
 				return callback.call(subject, e, arg2);
 			};
 
@@ -417,25 +288,6 @@
 
 			return this;
 		},
-		off: function(eventType, callback) {
-			if ( this.$events && this.$events[eventType] ) {
-				var events = this.$events[eventType],
-					changed = false;
-				r.each(events, function(listener, i) {
-					if ( !callback || callback == listener.original ) {
-						changed = true;
-						delete events[i];
-						if ( this.removeEventListener ) {
-							this.removeEventListener(listener.type, listener.callback, listener.bubbles);
-						}
-					}
-				}, this);
-				if ( changed ) {
-					this.$events[eventType] = events.filter(Array.defaultFilterCallback);
-				}
-			}
-			return this;
-		},
 		fire: function(eventType, e, arg2) {
 			if ( this.$events && this.$events[eventType] ) {
 				if ( !e ) {
@@ -449,15 +301,6 @@
 					}
 				}, this);
 			}
-			return this;
-		},
-		globalFire: function(globalType, localType, originalEvent, arg2) {
-			var e = originalEvent ? originalEvent : new AnyEvent(localType),
-				eventType = (globalType + '-' + localType).camel();
-			e.target = e.subject = this;
-			e.type = localType;
-			e.globalType = globalType;
-			W.fire(eventType, e, arg2);
 			return this;
 		}
 	});
@@ -499,7 +342,7 @@
 			return this.parentNode;
 		},
 		insertAfter: function(el, ref) {
-			var next = ref.nextSibling; 
+			var next = ref.nextSibling;
 			if ( next ) {
 				return this.insertBefore(el, next);
 			}
@@ -683,7 +526,7 @@
 			return this;
 		},
 		appendTo: function(parent) {
-			return this.inject(parent); 
+			return this.inject(parent);
 		},
 		injectTop: function(parent) {
 			if ( parent.firstChild ) {
@@ -750,13 +593,6 @@
 		},
 		elementIndex: function() {
 			return this.parentNode.getChildren().indexOf(this);
-		},
-		getPosition: function() {
-			var bcr = this.getBoundingClientRect();
-			return new Coords2D(bcr.left, bcr.top).add(W.getScroll());
-		},
-		getScroll: function() {
-			return new Coords2D(this.scrollLeft, this.scrollTop);
 		}
 	});
 
@@ -767,167 +603,20 @@
 		getElementByText: Element.prototype.getElementByText
 	});
 
-	r.extend([W, D], {
-		getScroll: function() {
-			return new Coords2D(
-				D.documentElement.scrollLeft || D.body.scrollLeft,
-				D.documentElement.scrollTop || D.body.scrollTop
-			);
-		}
-	});
-	Event.Custom.ready = {
-		before: function() {
-			if ( this == D ) {
-				if ( !domReadyAttached ) {
-					attachDomReady();
-				}
-			}
-		}
-	};
-
-	function attachDomReady() {
-		domReadyAttached = true;
-
-		D.on('DOMContentLoaded', function(e) {
-			this.fire('ready');
-		});
-	}
-	function $(id, selector) {
-		if ( typeof id == 'function' ) {
-			if ( D.readyState == 'interactive' || D.readyState == 'complete' ) {
-				setTimeout(id, 1);
-				return D;
-			}
-
-			return D.on('ready', id);
-		}
-		if ( !selector ) {
-			return D.getElementById(id);
-		}
-
-		return D.getElement(id);
+	function $(selector) {
+		return D.getElement(selector);
 	}
 
 	function $$(selector) {
 		return r.arrayish(selector) ? new Elements(selector) : D.getElements(selector);
 	}
-	function XHR(url, options) {
-		var defaults = {
-			method: 'GET',
-			async: true,
-			send: true,
-			data: null,
-			url: url,
-			requester: 'XMLHttpRequest',
-			execScripts: true
-		};
-		options = options ? r.merge({}, defaults, options) : defaults;
-		options.method = options.method.toUpperCase();
-
-		var xhr = new XMLHttpRequest;
-		xhr.open(options.method, options.url, options.async, options.username, options.password);
-		xhr.options = options;
-		xhr.on('load', function(e) {
-			var success = this.status == 200,
-				eventType = success ? 'success' : 'error',
-				t = this.responseText;
-
-			try {
-				this.responseJSON = (t[0] == '[' || t[0] == '{') && JSON.parse(t);
-			}
-			catch (ex) {}
-			var response = this.responseJSON || t;
-
-			var scripts;
-
-			if ( this.options.execScripts ) {
-				scripts = [];
-				if ( typeof response == 'string' ) {
-					var regex = /<script[^>]*>([\s\S]*?)<\/script>/i,
-						script;
-					while ( script = response.match(regex) ) {
-						response = response.replace(regex, '');
-						if ( script = script[1].trim() ) {
-							scripts.push(script);
-						}
-					}
-				}
-			}
-
-			this.fire(eventType, e, response);
-			this.fire('done', e, response);
-
-			if ( this.options.execScripts && scripts && scripts.length ) {
-				scripts.forEach(function(code) {
-					eval.call(W, code);
-				});
-			}
-
-			this.globalFire('xhr', eventType, e, response);
-			this.globalFire('xhr', 'done', e, response);
-		});
-		xhr.on('error', function(e) {
-			this.fire('done', e);
-
-			this.globalFire('xhr', 'error', e);
-			this.globalFire('xhr', 'done', e);
-		});
-		if ( options.method == 'POST' ) {
-			if ( !r.is_a(options.data, 'FormData') ) {
-				var encoding = options.encoding ? '; charset=' + encoding : '';
-				xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded' + encoding);
-			}
-		}
-		if ( options.send ) {
-			if ( options.requester ) {
-				xhr.setRequestHeader('X-Requested-With', options.requester);
-			}
-
-			xhr.globalFire('xhr', 'start');
-			xhr.fire('start');
-
-			if ( options.async ) {
-				setTimeout(function() {
-					xhr.send(options.data);
-				}, 1);
-			}
-			else {
-				xhr.send(options.data);
-			}
-		}
-		return xhr;
-	}
-
-	Event.Custom.progress = {
-		before: function(options) {
-			if ( this instanceof XMLHttpRequest && this.upload ) {
-				options.subject = this.upload;
-			}
-		}
-	};
-
-	function shortXHR(method) {
-		return function(url, data, options) {
-			if ( !options ) {
-				options = {};
-			}
-			options.method = method;
-			options.data = data;
-			var xhr = XHR(url, options);
-			return xhr;
-		};
-	}
 	r.$ = $;
 	W.$ = W.r = r;
 
 	r.$$ = $$;
-	r.xhr = XHR;
-	r.get = shortXHR('get');
-	r.post = shortXHR('post');
 	W.$$ = $$;
 	W.Elements = Elements;
 	W.AnyEvent = AnyEvent;
 	W.Eventable = Eventable;
-	W.Coords2D = Coords2D;
 })(this, this.document);
 

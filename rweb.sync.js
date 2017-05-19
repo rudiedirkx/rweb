@@ -1,4 +1,7 @@
+
 rweb.identity && (rweb.sync = {
+
+	// @todo Fix Drive CORS!? Chrome doesn't have a problem, but Firefox won't accept any Drive resources
 
 	import: function(newSites, callback, options) {
 		var summary = {
@@ -116,15 +119,46 @@ rweb.identity && (rweb.sync = {
 	},
 
 	connect: function(interactive, callback) {
-		rweb.browser.identity.getAuthToken({interactive: interactive}, function(token) {
-			if ( token ) {
-				callback(token);
-			}
-			else {
-				console.warn("rweb.browser.identity.getAuthToken() didn't return a token!", rweb.browser.runtime.lastError);
+		// Chrome
+		if ( rweb.browser.identity.getAuthToken ) {
+			return rweb.browser.identity.getAuthToken({interactive: interactive}, function(token) {
+				if ( token ) {
+					callback(token);
+				}
+				else {
+					console.warn("rweb.browser.identity.getAuthToken() didn't return a token!", rweb.browser.runtime.lastError);
 
-				callback(false);
+					callback(false);
+				}
+			});
+		}
+
+		// WebExtensions (Firefox)
+		var manifest = rweb.browser.runtime.getManifest();
+		var provider = 'https://accounts.google.com/o/oauth2/v2/auth';
+		var clientId = encodeURIComponent(manifest.drive.client_id);
+		var state = encodeURIComponent(Math.random());
+		var scopes = encodeURIComponent(manifest.drive.scope);
+		var redirectUrl = encodeURIComponent(rweb.browser.identity.getRedirectURL());
+		var url = `${provider}?client_id=${clientId}&state=${state}&response_type=token&scope=${scopes}&redirect_uri=${redirectUrl}`;
+console.debug('oauth2 url', url);
+		rweb.browser.identity.launchWebAuthFlow({
+			url: url,
+			interactive: interactive,
+		}).then(function(url) {
+			url = new URL(url.replace(/#/g, '?'));
+			var token = url.searchParams.get('access_token');
+console.log('auth access_token', token)
+			if ( token ) {
+				// return rweb.browser.storage.local.set({drive_access_token: token}, function() {
+					return callback(token);
+				// });
 			}
+
+			throw new Error("Can't find `access_token` in response URL");
+		}).catch(function() {
+console.log(`${interactive?'':'non-'}interactive auth failed`);
+			callback(false);
 		});
 	},
 	download: function(callback, silent) {
@@ -158,10 +192,9 @@ rweb.identity && (rweb.sync = {
 			// Save `downloadingSince` to avoid multi-downloading
 			rweb.browser.storage.local.set({downloadingSince: Date.now()});
 
-			rweb.sync.drive.list(token, function(rsp) {
+			rweb.sync.drive.list(token, function(file) {
 				// File exists, download data
-				if ( rsp.items.length ) {
-					var file = rsp.items[0];
+				if ( file ) {
 					rweb.sync.drive.download(token, file, function(data) {
 						// Usable data
 						if ( data ) {
@@ -177,7 +210,7 @@ rweb.identity && (rweb.sync = {
 				}
 				// File doesn't exist, create and upload
 				else {
-					rweb.sync.drive.create(token, function(file) {
+					rweb.sync.drive.createFile(token, function(file) {
 						rweb.sync.drive.upload(token, file.id, function(data) {
 							handler(data);
 						});
@@ -193,15 +226,14 @@ rweb.identity && (rweb.sync = {
 
 		var start = function() {
 			rweb.sync.connect(false, function(token) {
-				rweb.sync.drive.list(token, function(rsp) {
+				rweb.sync.drive.list(token, function(file) {
 					// File exists, overwrite
-					if ( rsp.items.length ) {
-						var file = rsp.items[0];
+					if ( file ) {
 						upload(token, file);
 					}
 					// File doesn't exist, create & upload
 					else {
-						rweb.sync.drive.create(token, function(file) {
+						rweb.sync.drive.createFile(token, function(file) {
 							upload(token, file);
 						});
 					}
@@ -233,11 +265,10 @@ rweb.identity && (rweb.sync = {
 	drive: {
 		wrapLoad: function(type, body) {
 			return function(e) {
-				var status = parseFloat(this.getResponseHeader('status'));
-console.debug(type + ':status', status);
+console.debug(type + ':status', this.status + ' ' + this.statusText);
 
 				// Unauthorized
-				if ( status == 401 ) {
+				if ( this.status == 401 ) {
 					rweb.sync.connect(false, function(token) {
 						rweb.browser.identity.removeCachedAuthToken({token: token}, function() {
 							alert("Authentication error during '" + type + "'. Try again after this reload.");
@@ -246,7 +277,7 @@ console.debug(type + ':status', status);
 					});
 				}
 				// Success
-				else if ( status >= 200 && status < 400 ) {
+				else if ( this.status >= 200 && this.status < 400 ) {
 					body.call(this, e);
 				}
 				// Any error
@@ -274,17 +305,68 @@ console.debug(type + ':data', rsp);
 			var xhr = new XMLHttpRequest;
 			xhr.open('GET', 'https://www.googleapis.com/drive/v2/files', true);
 			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-			xhr.onload = rweb.sync.drive.wrapCallback('list', callback);
+			xhr.onload = rweb.sync.drive.wrapCallback('list', function(rsp) {
+				var file = rsp.items.find(file => file.mimeType == 'application/json');
+
+				// Immediately go on with processing
+				callback(file);
+
+				// @todo Doesn't work very well in Firefox, and breaks (drive:list) in unpatched versions
+				// See if the RWeb file is in its own folder yet, or move it
+				// setTimeout(function() {
+				// 	rweb.sync.drive.moveToFolder(token, file);
+				// }, 1000);
+			});
 			xhr.onerror = rweb.sync.drive.wrapError('list');
 			xhr.send();
 		},
-		create: function(token, callback) {
+		moveToFolder: function(token, file) {
+			if ( file && file.parents.length == 1 && file.parents[0].isRoot ) {
+				console.debug('[RWeb folder] Creating custom folder for RWeb file...');
+				var oldParent = file.parents[0];
+				rweb.sync.drive.createFolder(token, function(newParent) {
+					console.debug('[RWeb folder] Updating RWeb file parents...');
+
+					var query = new URLSearchParams;
+					query.set('addParents', newParent.id);
+					query.set('removeParents', oldParent.id);
+
+					rweb.sync.drive.patch(token, file.id, query, function(file) {
+						console.debug('[RWeb folder] Moved rweb file to its own folder!');
+					});
+				});
+			}
+		},
+		createFolder: function(token, callback) {
 			var xhr = new XMLHttpRequest;
 			xhr.open('POST', 'https://www.googleapis.com/drive/v2/files', true);
 			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
 			xhr.setRequestHeader('Content-Type', 'application/json');
-			xhr.onload = rweb.sync.drive.wrapCallback('create', callback);
-			xhr.onerror = rweb.sync.drive.wrapError('create');
+			xhr.onload = rweb.sync.drive.wrapCallback('createFolder', callback);
+			xhr.onerror = rweb.sync.drive.wrapError('createFolder');
+
+			var data = {
+				"title": 'RWeb (' + rweb.browser.runtime.id + ')',
+				"mimeType": 'application/vnd.google-apps.folder',
+			};
+			xhr.send(JSON.stringify(data));
+		},
+		patch: function(token, fileId, query, callback) {
+			var xhr = new XMLHttpRequest;
+			xhr.open('PATCH', 'https://www.googleapis.com/drive/v2/files/' + fileId + '?' + query, true);
+			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.onload = rweb.sync.drive.wrapCallback('createFolder', callback);
+			xhr.onerror = rweb.sync.drive.wrapError('createFolder');
+			xhr.send('{}');
+		},
+		createFile: function(token, callback) {
+			var xhr = new XMLHttpRequest;
+			xhr.open('POST', 'https://www.googleapis.com/drive/v2/files', true);
+			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.onload = rweb.sync.drive.wrapCallback('createFile', callback);
+			xhr.onerror = rweb.sync.drive.wrapError('createFile');
 
 			var data = {
 				"title": "rweb.sites.json",
@@ -298,16 +380,17 @@ console.debug(type + ':data', rsp);
 			xhr.open('PUT', 'https://www.googleapis.com/upload/drive/v2/files/' + fileId, true);
 			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
 			xhr.setRequestHeader('Content-Type', 'application/json');
-			xhr.onload = rweb.sync.drive.wrapCallback('upload', function(rsp) {
-				rweb.browser.storage.local.set({dirty: false}, function() {
-					callback(rsp);
-				});
-			});
-			xhr.onerror = rweb.sync.drive.wrapError('upload');
 
 			rweb.browser.storage.local.get(['sites'], function(items) {
 				var sites = items.sites || [];
 console.debug('upload:output', sites);
+
+				xhr.onload = rweb.sync.drive.wrapCallback('upload', function(rsp) {
+					rweb.browser.storage.local.set({dirty: false}, function() {
+						callback(sites);
+					});
+				});
+				xhr.onerror = rweb.sync.drive.wrapError('upload');
 				xhr.send(JSON.stringify(sites));
 			});
 		},

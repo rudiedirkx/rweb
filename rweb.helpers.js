@@ -4,6 +4,7 @@ rweb = {
 
 	// WebExtensions compatibility //
 	browser: typeof browser != 'undefined' ? browser : chrome,
+	// @todo Allow other auth than 'getAuthToken' when Drive CORS is fixed!?
 	identity: (typeof browser != 'undefined' ? browser : chrome).identity,
 	// WebExtensions compatibility //
 
@@ -217,6 +218,11 @@ rweb = {
 		rweb.browser.storage.local.get(['log'], function(items) {
 			var logs = items.log || [];
 			logs.unshift(log);
+
+			if ( logs.length > 1000 ) {
+				logs.splice(1000);
+			}
+
 			rweb.browser.storage.local.set({log: logs}, function() {
 				callback && callback(logs.length);
 			});

@@ -1,10 +1,10 @@
 {
 	"name": "RWeb",
 	"description": "Simple tool for customizing websites by adding your own CSS & JS.",
-	"version": "1.23",
+	"version": "1.28",
 	"key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC1FCajQz8TcEsVum4AKd7bAfyjJSj9F7FuNFZIm1KTb5aVRIbUDD9joB3BZUzYzmW5BdkdYIaRMTP2bAramq9ep2eUHF3YbAPC24BrEbEKGnuPQDyHgN5pL/VFSzpYNA8Q9DfhzG10xpcNCivOdmLlA9fB4ugBpKhHntcZOrsCvQIDAQAB",
 
-	"permissions": [ "storage", "tabs", "contextMenus", "identity" ],
+	"permissions": [ "storage", "tabs", "contextMenus", "identity", "<all_urls>" ],
 
 	"options_page": "options/options.html",
 	"content_scripts": [
@@ -27,10 +27,20 @@
 		}
 	},
 
-	"oauth2": {
-		"dev_client_id": "346127871184-hi1jj6g6btohao07msv0fub3dl74lfei.apps.googleusercontent.com",
-		"live_client_id": "559705211499-5c5ul38obg7epc9n71626dqavikoiuvj.apps.googleusercontent.com",
+	"applications": {
+		"gecko": {
+			"id": "rweb@hotblocks.nl"
+		}
+	},
 
+	"drive": {
+		"live_client_id": "559705211499-uhbgculrp1u2r1q7gips6nljalu9t5vc.apps.googleusercontent.com",
+		"client_id": "346127871184-vucrko27vhi8eu8bqb8uj353ii4v5jnq.apps.googleusercontent.com",
+		"scope": "https://www.googleapis.com/auth/drive.file"
+	},
+
+	"oauth2": {
+		"live_client_id": "559705211499-5c5ul38obg7epc9n71626dqavikoiuvj.apps.googleusercontent.com",
 		"client_id": "346127871184-hi1jj6g6btohao07msv0fub3dl74lfei.apps.googleusercontent.com",
 		"scopes": [
 			"https://www.googleapis.com/auth/drive.file"
