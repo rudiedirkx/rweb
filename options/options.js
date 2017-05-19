@@ -90,10 +90,10 @@ rweb.ui = {
 
 	init: function() {
 		// Elements
-		$sites = $('sites');
+		$sites = $('#sites');
 		$table = $sites.getFirst();
 		$newSite = $table.getElement('tbody');
-		$prefs = $('prefs');
+		$prefs = $('#prefs');
 
 		// // BUILD SITES
 		rweb.ui.buildSites(function(sites) {
@@ -124,7 +124,7 @@ rweb.ui = {
 				});
 
 				// Fetch the most specific targeted site to open it
-				var $openSite = $('tbody[data-host="' + host + '"]', true) || $('tbody.hilited', true);
+				var $openSite = $('tbody[data-host="' + host + '"]') || $('tbody.hilited');
 				if ( $openSite ) {
 					rweb.onBrowserActionClick(function(action) {
 						if ( action == 'open' ) {
@@ -135,7 +135,7 @@ rweb.ui = {
 				}
 
 				// Add host to new site, when opened
-				var $newHost = $('tbody.new-site', true).getElement('.el-host');
+				var $newHost = $('tbody.new-site').getElement('.el-host');
 				$newHost.on('focus', function tmpOnFocus() {
 					if (!this.value) {
 						this.value = host;
@@ -417,7 +417,7 @@ rweb.ui = {
 		 * UPLOAD & DOWNLOAD
 		 */
 
-		$('btn-download').on('click', function(e) {
+		$('#btn-download').on('click', function(e) {
 			e.preventDefault();
 
 			var btn = this;
@@ -434,7 +434,7 @@ rweb.ui = {
 			});
 		});
 
-		$('btn-upload').on('click', function(e) {
+		$('#btn-upload').on('click', function(e) {
 			e.preventDefault();
 
 			var sites = rweb.ui.settings();
@@ -463,24 +463,24 @@ rweb.ui = {
 		rweb.browser.storage.local.get(['dirty', 'lastUpload', 'lastDownload'], function(items) {
 			var uploadTitle = [];
 			if ( items.dirty ) {
-				$('btn-upload').addClass('dirty');
+				$('#btn-upload').addClass('dirty');
 				uploadTitle.push("'DIRTY' LOCAL STATE: you have local saved changes not uploaded to Drive");
 			}
 			uploadTitle.push('Last upload was: ' + (new Date(items.lastUpload)));
-			$('btn-upload').attr('title', uploadTitle.join("\n\n"));
+			$('#btn-upload').attr('title', uploadTitle.join("\n\n"));
 
 			var downloadTitle = [];
 			if ( items.lastDownload && items.lastDownload < Date.now() - rweb.MUST_DOWNLOAD_EVERY_N_MINUTES * 60000 ) {
-				$('btn-download').addClass('behind');
+				$('#btn-download').addClass('behind');
 				downloadTitle.push("LOCAL STATE IS BEHIND: it's been more than " + rweb.MUST_DOWNLOAD_EVERY_N_MINUTES + " minutes since auto-download");
 			}
 			downloadTitle.push('Last download was: ' + (new Date(items.lastDownload)));
-			$('btn-download').attr('title', downloadTitle.join("\n\n"));
+			$('#btn-download').attr('title', downloadTitle.join("\n\n"));
 		});
 
 		// Enable buttons only if SYNC is enabled
 		if (rweb.sync) {
-			$('btn-connect2drive').disabled = false;
+			$('#btn-connect2drive').disabled = false;
 
 			rweb.sync.connect(false, function(token) {
 				if ( token ) {
@@ -490,7 +490,7 @@ rweb.ui = {
 			});
 		}
 
-		$('btn-connect2drive').on('click', function(e) {
+		$('#btn-connect2drive').on('click', function(e) {
 			e.preventDefault();
 
 			var btn = this;
@@ -512,14 +512,14 @@ rweb.ui = {
 		 * OPEN SYNC LOG
 		 */
 
-		$('btn-sync-log').on('click', function(e) {
+		$('#btn-sync-log').on('click', function(e) {
 			e.preventDefault();
 
-			var $form = $('form-sync-log');
+			var $form = $('#form-sync-log');
 			if ( $form.toggle() ) {
 				$form.scrollIntoViewIfNeeded();
 
-				var $ta = $('ta-sync-log');
+				var $ta = $('#ta-sync-log');
 				rweb.browser.storage.local.get('log', function(items) {
 					var logs = items.log || [];
 
@@ -553,16 +553,16 @@ rweb.ui = {
 		 * EXPORT
 		 */
 
-		$('btn-export').on('click', function(e) {
+		$('#btn-export').on('click', function(e) {
 			e.preventDefault();
 
 			var settings = rweb.ui.settings(false);
 
-			var $form = $('form-export');
+			var $form = $('#form-export');
 			if ( $form.toggle() ) {
 				$form.scrollIntoViewIfNeeded();
 
-				var $ta = $('ta-export');
+				var $ta = $('#ta-export');
 				$ta.value = JSON.stringify(settings);
 				$ta.focus();
 				$ta.selectionStart = 0;
@@ -576,19 +576,19 @@ rweb.ui = {
 		 * IMPORT
 		 */
 
-		$('btn-import').on('click', function(e) {
+		$('#btn-import').on('click', function(e) {
 			e.preventDefault();
 
-			var $form = $('form-import');
+			var $form = $('#form-import');
 			if ( $form.toggle() ) {
 				$form.scrollIntoViewIfNeeded();
 
-				var $ta = $('ta-import');
+				var $ta = $('#ta-import');
 				$ta.focus();
 			}
 		});
 
-		$('form-import').on('submit', function(e) {
+		$('#form-import').on('submit', function(e) {
 			e.preventDefault();
 
 			// Parse import
@@ -621,28 +621,28 @@ rweb.ui = {
 		 * DISABLED / BLACKLIST
 		 */
 
-		$('btn-disabled').on('click', function(e) {
+		$('#btn-disabled').on('click', function(e) {
 			e.preventDefault();
 
 			rweb.browser.storage.local.get('disabled', function(items) {
 				var disabled = items.disabled || {},
 					hosts = Object.keys(disabled);
 
-				var $form = $('form-disabled');
+				var $form = $('#form-disabled');
 				if ( $form.toggle() ) {
 					$form.scrollIntoViewIfNeeded();
 
-					var $ta = $('ta-disabled');
+					var $ta = $('#ta-disabled');
 					$ta.setText(hosts.join("\n")).focus();
 				}
 			});
 		});
 
-		$('form-disabled').on('submit', function(e) {
+		$('#form-disabled').on('submit', function(e) {
 			e.preventDefault();
 			var $form = this;
 
-			var hosts = $('ta-disabled').value.trim();
+			var hosts = $('#ta-disabled').value.trim();
 			hosts = hosts ? hosts.split("\n") : [];
 
 			var disabled = {};
@@ -664,19 +664,19 @@ rweb.ui = {
 		 * SEARCH
 		 */
 
-		$('btn-search').on('click', function(e) {
+		$('#btn-search').on('click', function(e) {
 			e.preventDefault();
 
-			var $form = $('form-search');
+			var $form = $('#form-search');
 			if ( $form.toggle() ) {
 				$form.scrollIntoViewIfNeeded();
 
-				var $inp = $('inp-search');
+				var $inp = $('#inp-search');
 				$inp.focus();
 			}
 		});
 
-		$('form-search').on('submit', function(e) {
+		$('#form-search').on('submit', function(e) {
 			e.preventDefault();
 
 			var q = this.elements.query.value;
@@ -698,7 +698,7 @@ rweb.ui = {
 				var css = !cs ? site.css.toLowerCase() : site.css;
 				var js = !cs ? site.js.toLowerCase() : site.js;
 
-				var $tbody = $('tbody[data-id="' + site.id + '"]', true);
+				var $tbody = $('tbody[data-id="' + site.id + '"]');
 
 				var inCSS = css.split(q).length-1;
 				if ( inCSS ) {
@@ -718,19 +718,19 @@ rweb.ui = {
 				}
 			});
 
-			$('search-results-num-sites').setText(matches.length);
-			$('search-results').addClass('open');
+			$('#search-results-num-sites').setText(matches.length);
+			$('#search-results').addClass('open');
 			var html = matches ? '<li>' + matches.join('</li><li>') + '</li>' : '';
-			$('search-results-summary').setHTML(html);
+			$('#search-results-summary').setHTML(html);
 
 			this.scrollIntoViewIfNeeded();
 		});
 
-		$('search-results').on('click', 'a.host[data-id]', function(e) {
+		$('#search-results').on('click', 'a.host[data-id]', function(e) {
 			e.preventDefault();
 
 			var id = this.data('id');
-			var $tbody = $('tbody[data-id="' + id + '"]', true);
+			var $tbody = $('tbody[data-id="' + id + '"]');
 			rweb.ui.openSite($tbody);
 		});
 

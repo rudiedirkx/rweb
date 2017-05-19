@@ -1,5 +1,5 @@
 // http://rudiedirkx.github.io/rjs/build.html#-ifsetor,-getter,-array_intersect,-array_diff,-array_defaultfilter,-string_camel,-string_repeat,-_classlist,-asset_js,-coords2d,-coords2d_add,-coords2d_subtract,-coords2d_tocss,-coords2d_join,-coords2d_equal,-anyevent_lmrclick,-anyevent_touches,-anyevent_pagexy,-anyevent_summary,-anyevent_subject,-event_custom,-_event_custom_mousenterleave,-event_custom_mousewheel,-event_custom_directchange,-eventable_off,-eventable_globalfire,-element_attr2method,-element_attr2method_html,-element_attr2method_text,-element_position,-element_scroll,-windoc_scroll,-domready,-xhr,-xhr_global
-// f75d6602bd506f7f4a933e1402f9bdb3d9374191
+// b21c1cea8be7a40b2bc74446df9fff304d5383e1
 
 (function(W, D) {
 
@@ -8,8 +8,8 @@
 	var html = D.documentElement,
 		head = html.getElementsByTagName('head')[0];
 
-	var r = function r( id, sel ) {
-		return r.$(id, sel);
+	var r = function r(selector) {
+		return r.$(selector);
 	};
 
 	JSON.encode = JSON.stringify;
@@ -246,12 +246,6 @@
 
 			var baseType = eventType,
 				customEvent;
-			if ( customEvent = Event.Custom[eventType] ) {
-				if ( customEvent.type ) {
-					baseType = customEvent.type;
-				}
-			}
-
 			var onCallback = function(e, arg2) {
 				if ( e && !(e instanceof AnyEvent) ) {
 					e = new AnyEvent(e);
@@ -609,12 +603,8 @@
 		getElementByText: Element.prototype.getElementByText
 	});
 
-	function $(id, selector) {
-		if ( !selector ) {
-			return D.getElementById(id);
-		}
-
-		return D.getElement(id);
+	function $(selector) {
+		return D.getElement(selector);
 	}
 
 	function $$(selector) {
