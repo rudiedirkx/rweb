@@ -192,10 +192,9 @@ console.log(`${interactive?'':'non-'}interactive auth failed`);
 			// Save `downloadingSince` to avoid multi-downloading
 			rweb.browser.storage.local.set({downloadingSince: Date.now()});
 
-			rweb.sync.drive.list(token, function(rsp) {
+			rweb.sync.drive.list(token, function(file) {
 				// File exists, download data
-				if ( rsp.items.length ) {
-					var file = rsp.items[0];
+				if ( file ) {
 					rweb.sync.drive.download(token, file, function(data) {
 						// Usable data
 						if ( data ) {
@@ -227,10 +226,9 @@ console.log(`${interactive?'':'non-'}interactive auth failed`);
 
 		var start = function() {
 			rweb.sync.connect(false, function(token) {
-				rweb.sync.drive.list(token, function(rsp) {
+				rweb.sync.drive.list(token, function(file) {
 					// File exists, overwrite
-					if ( rsp.items.length ) {
-						var file = rsp.items[0];
+					if ( file ) {
 						upload(token, file);
 					}
 					// File doesn't exist, create & upload
@@ -308,11 +306,12 @@ console.debug(type + ':data', rsp);
 			xhr.open('GET', 'https://www.googleapis.com/drive/v2/files', true);
 			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
 			xhr.onload = rweb.sync.drive.wrapCallback('list', function(rsp) {
+				var file = rsp.items.find(file => file.mimeType == 'application/json');
+
 				// Immediately go on with processing
-				callback(rsp);
+				callback(file);
 
 				// See if the RWeb file is in its own folder yet, or move it
-				var file = rsp.items[0];
 				setTimeout(function() {
 					rweb.sync.drive.moveToFolder(token, file);
 				}, 1000);
