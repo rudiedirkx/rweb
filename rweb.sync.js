@@ -136,9 +136,9 @@ rweb.identity && (rweb.sync = {
 		// WebExtensions (Firefox)
 		var manifest = rweb.browser.runtime.getManifest();
 		var provider = 'https://accounts.google.com/o/oauth2/v2/auth';
-		var clientId = encodeURIComponent(manifest.drive.client_id);
+		var clientId = encodeURIComponent(manifest.oauth2.client_id);
 		var state = encodeURIComponent(Math.random());
-		var scopes = encodeURIComponent(manifest.drive.scope);
+		var scopes = encodeURIComponent(manifest.oauth2.scopes.join(' '));
 		var redirectUrl = encodeURIComponent(rweb.browser.identity.getRedirectURL());
 		var url = `${provider}?client_id=${clientId}&state=${state}&response_type=token&scope=${scopes}&redirect_uri=${redirectUrl}`;
 console.debug('oauth2 url', url);
