@@ -35,12 +35,13 @@ rweb = {
 		});
 	},
 
-	host: function(host, m) {
-		if ( m = host.match(/\/\/([^/]+)\//) ) {
-			host = m[1];
-		}
+	host: function(host) {
+		host = host.replace(/^.+\/\//, '');
+		host = host.replace(/\/.*/, '');
+		host = host.replace(/^www\./, '');
+		host = host.replace(/:\d+$/, '');
 
-		return host.replace(/^www\./, '');
+		return host;
 	},
 
 	onBrowserActionClick: function(callback) {
