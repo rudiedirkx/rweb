@@ -103,13 +103,27 @@ rweb = {
 	},
 
 	siteSorter: function(a, b) {
-		if (a.host == 'all') return -1;
+		var diff = rweb.siteSorterHost(a, b);
+		if ( diff == 0 ) {
+			diff = rweb.siteSorterUuid(a, b);
+		}
+
+		return diff;
+	},
+
+	siteSorterHost: function(a, b) {
+		if (a.host == b.host) return 0;
+		else if (a.host == 'all') return -1;
 		else if (b.host == 'all') return 1;
 		else if (a.host == 'matches') return -1;
 		else if (b.host == 'matches') return 1;
 		else if (a.host == 'options') return -1;
 		else if (b.host == 'options') return 1;
 		else return a.host < b.host ? -1 : 1;
+	},
+
+	siteSorterUuid: function(a, b) {
+		return a.id < b.id ? -1 : 1;
 	},
 
 	sites: function(host, callback, options) {
