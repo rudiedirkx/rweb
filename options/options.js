@@ -782,8 +782,9 @@ rweb.ui = {
 			rweb.browser.tabs.query({}, function(tabs) {
 				tabs.forEach(function(tab) {
 					var host = rweb.host(tab.url);
+					var skip = rweb.skipUrl(tab.url);
 
-					if ( !disabled[host] && rweb.hostsMatch(updatedHosts, host) ) {
+					if ( !skip && !disabled[host] && rweb.hostsMatch(updatedHosts, host) ) {
 						var matches = rweb.hostFilter(sites, host),
 							css = '';
 						matches.forEach(function(site) {

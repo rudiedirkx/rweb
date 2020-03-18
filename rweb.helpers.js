@@ -68,6 +68,11 @@ rweb = {
 		}, callback);
 	},
 
+	skipUrl: function(url) {
+		console.log('skip?', url);
+		return url.match(/^chrome(\-extension):\/\//) ? true : false;
+	},
+
 	hostsMatch: function(hosts, host, options) {
 		options || (options = {});
 		var exact = options.exact != null ? options.exact : false;
