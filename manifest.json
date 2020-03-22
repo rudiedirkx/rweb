@@ -47,5 +47,11 @@
 		"32": "images/32x32.png",
 		"16": "images/16x16.png"
 	},
-	"manifest_version": 2
+	"manifest_version": 2,
+
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "rweb@hotblocks.nl"
+		}
+	}
 }
