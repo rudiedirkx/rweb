@@ -36,7 +36,8 @@ textarea {
 #sites input:not([type=submit]):not([type=button]):not([type=reset]),
 #sites textarea,
 #sites select {
-	padding: 15px;
+	--site-input-padding: 15px;
+	padding: var(--site-input-padding);
 	background: transparent;
 	border: solid 0 #bbb;
 }
@@ -157,6 +158,9 @@ p[data-notifid].read {
 #sites .host {
 	width: 100%;
 	display: block;
+}
+#sites .weight {
+	width: calc(var(--site-input-padding) * 2 + 1.5em);
 }
 #sites tbody:not(.expanded) .el-host {
 	cursor: pointer;
@@ -295,4 +299,16 @@ html {
 	visibility: hidden;
 	pointer-events: none;
 	z-index: -2;
+}
+
+
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	appearance: none;
+	margin: 0;
+}
+input[type="number"] {
+	-moz-appearance: textfield;
 }

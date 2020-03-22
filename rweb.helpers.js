@@ -109,11 +109,16 @@ rweb = {
 
 	siteSorter: function(a, b) {
 		var diff = rweb.siteSorterHost(a, b);
-		if ( diff == 0 ) {
-			diff = rweb.siteSorterUuid(a, b);
+		if ( diff != 0 ) {
+			return diff;
 		}
 
-		return diff;
+		diff = rweb.siteSorterWeight(a, b);
+		if ( diff != 0 ) {
+			return diff;
+		}
+
+		return rweb.siteSorterUuid(a, b);
 	},
 
 	siteSorterHost: function(a, b) {
@@ -131,12 +136,19 @@ rweb = {
 		return a.id < b.id ? -1 : 1;
 	},
 
+	siteSorterWeight: function(a, b) {
+		return a.weight == b.weight ? 0 : (a.weight < b.weight ? -1 : 1);
+	},
+
 	sites: function(host, callback, options) {
 		// console.time('rweb.sites ("' + host + '")');
 		rweb.browser.storage.local.get(['sites', 'dirty', 'disabled', 'lastDownload', 'downloadingSince'], function(items) {
 			var dirty = Boolean(items.dirty);
 			var disabled = host && items.disabled && items.disabled[host] ? true : false;
-			var sites = items.sites || [];
+			var sites = (items.sites || []).map(function(site) {
+				site.weight = parseInt(site.weight || '0');
+				return site;
+			});
 
 			var meta = {
 				dirty: dirty,
