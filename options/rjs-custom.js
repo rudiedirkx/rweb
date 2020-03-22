@@ -1,5 +1,5 @@
-// http://rudiedirkx.github.io/rjs/build.html#-ifsetor,-getter,-array_intersect,-array_diff,-array_defaultfilter,-string_camel,-string_repeat,-_classlist,-asset_js,-coords2d,-coords2d_add,-coords2d_subtract,-coords2d_tocss,-coords2d_join,-coords2d_equal,-anyevent_lmrclick,-anyevent_touches,-anyevent_pagexy,-anyevent_summary,-anyevent_subject,-event_custom,-_event_custom_mousenterleave,-event_custom_mousewheel,-event_custom_directchange,-eventable_off,-eventable_globalfire,-element_attr2method,-element_attr2method_html,-element_attr2method_text,-element_position,-element_scroll,-windoc_scroll,-domready,-xhr,-xhr_global
-// b21c1cea8be7a40b2bc74446df9fff304d5383e1
+// https://rudiedirkx.github.io/rjs/build.html#-ifsetor,-getter,-array_intersect,-array_diff,-array_defaultfilter,-string_camel,-string_repeat,-_classlist,-asset_js,-coords2d,-anyevent_lmrclick,-anyevent_touches,-anyevent_pagexy,-anyevent_summary,-anyevent_subject,-event_custom,-_event_custom_mousenterleave,-event_custom_mousewheel,-event_custom_directchange,-eventable_off,-eventable_globalfire,-element_attr2method,-element_attr2method_html,-element_attr2method_text,-element_position,-element_scroll,-windoc_scroll,-domready,-xhr,-xhr_global
+// 578d01cb28ac1f83d924519d9cc9d82db7613d1f
 
 (function(W, D) {
 
@@ -16,7 +16,16 @@
 	JSON.decode = JSON.parse;
 	var cssDisplays = {};
 	r.arrayish = function(obj) {
-		return obj instanceof Array || ( typeof obj.length == 'number' && typeof obj != 'string' && ( obj[0] !== undefined || obj.length === 0 ) );
+		if ( obj == null ) {
+			return false;
+		}
+		if ( obj instanceof Array ) {
+			return true;
+		}
+		if ( typeof obj.length == 'number' && typeof obj != 'string' && ( obj[0] !== undefined || obj.length === 0 ) ) {
+			return true;
+		}
+		return false;
 	};
 
 	r.array = function(list) {
@@ -89,12 +98,12 @@
 
 			var methodOwner = Host.prototype ? Host.prototype : Host;
 			r.each(proto, function(fn, name) {
-				methodOwner[name] = fn;
+				Object.defineProperty(methodOwner, name, {value: fn});
 
-				if ( Host == Element && !Elements.prototype[name] ) {
-					Elements.prototype[name] = function() {
+				if ( Host === Element && !Elements.prototype[name] ) {
+					Object.defineProperty(Elements.prototype, name, {value: function() {
 						return this.invoke(name, arguments);
-					};
+					}});
 				}
 			});
 		});
@@ -153,6 +162,10 @@
 			});
 			return returnSelf ? this : ( isElements || !res.length ? new Elements(res) : res );
 		},
+		concat: function(items) {
+			return new Elements(this.slice().concat(items));
+		},
+
 		filter: function(filter) {
 			if ( typeof filter == 'function' ) {
 				return new Elements([].filter.call(this, filter));
@@ -175,12 +188,18 @@
 		this.fromElement = e.fromElement;
 		this.toElement = e.toElement;
 		this.key = e.keyCode || e.which;
+		this.keyName = e.key;
+		this.code = e.code;
 		this.alt = e.altKey;
 		this.ctrl = e.ctrlKey;
 		this.shift = e.shiftKey;
 		this.button = e.button || e.which;
 		this.which = this.key || this.button;
 		this.detail = e.detail;
+
+		this.deltaX = e.deltaX;
+		this.deltaY = e.deltaY;
+		this.deltaZ = e.deltaZ;
 
 		this.pageX = e.pageX;
 		this.pageY = e.pageY;
@@ -228,11 +247,12 @@
 			r.extend([this], methods);
 		};
 	});
+	var eventablePrototype;
 	function Eventable(subject) {
 		this.subject = subject;
 		this.time = Date.now();
 	}
-	r.extend(Eventable, {
+	r.extend(Eventable, eventablePrototype = {
 		on: function(eventType, matches, callback) {
 			if ( !callback ) {
 				callback = matches;
@@ -244,47 +264,51 @@
 				subject: this || W
 			};
 
-			var baseType = eventType,
-				customEvent;
-			var onCallback = function(e, arg2) {
-				if ( e && !(e instanceof AnyEvent) ) {
-					e = new AnyEvent(e);
-				}
+			var eventTypes = eventType instanceof Array ? eventType : [eventType];
 
-				var subject = options.subject;
-				if ( e && e.target && matches ) {
-					if ( !(subject = e.target.selfOrAncestor(matches)) ) {
+			r.each(eventTypes, function(eventType) {
+				var baseType = eventType;
+				var customEvent;
+				var onCallback = function(e, arg2) {
+					if ( e && !(e instanceof AnyEvent) ) {
+						e = new AnyEvent(e);
+					}
+
+					var subject = options.subject;
+					if ( e && e.target && matches ) {
+						if ( !(subject = e.target.selfOrAncestor(matches)) ) {
+							return;
+						}
+					}
+
+					if ( customEvent && customEvent.filter ) {
+						if ( !customEvent.filter.call(subject, e, arg2) ) {
+							return;
+						}
+					}
+
+					return callback.call(subject, e, arg2);
+				};
+
+				if ( customEvent && customEvent.before ) {
+					if ( customEvent.before.call(this, options) === false ) {
 						return;
 					}
 				}
 
-				if ( customEvent && customEvent.filter ) {
-					if ( !customEvent.filter.call(subject, e, arg2) ) {
-						return;
-					}
+				var events = options.subject.$events || (options.subject.$events = {});
+				events[eventType] || (events[eventType] = []);
+				events[eventType].push({
+					type: baseType,
+					original: callback,
+					callback: onCallback,
+					bubbles: options.bubbles
+				});
+
+				if ( options.subject.addEventListener ) {
+					options.subject.addEventListener(baseType, onCallback, options.bubbles);
 				}
-
-				return callback.call(subject, e, arg2);
-			};
-
-			if ( customEvent && customEvent.before ) {
-				if ( customEvent.before.call(this, options) === false ) {
-					return this;
-				}
-			}
-
-			var events = options.subject.$events || (options.subject.$events = {});
-			events[eventType] || (events[eventType] = []);
-			events[eventType].push({
-				type: baseType,
-				original: callback,
-				callback: onCallback,
-				bubbles: options.bubbles
-			});
-
-			if ( options.subject.addEventListener ) {
-				options.subject.addEventListener(baseType, onCallback, options.bubbles);
-			}
+			}, this);
 
 			return this;
 		},
@@ -304,10 +328,11 @@
 			return this;
 		}
 	});
-	r.extend([W, D, Element, XMLHttpRequest], Eventable.prototype);
+	var hosts = [W, D, Element, XMLHttpRequest];
 	if ( W.XMLHttpRequestUpload ) {
-		r.extend([W.XMLHttpRequestUpload], Eventable.prototype);
+		hosts.push(W.XMLHttpRequestUpload);
 	}
+	r.extend(hosts, eventablePrototype);
 	r.extend(Node, {
 		ancestor: function(selector) {
 			var el = this;
