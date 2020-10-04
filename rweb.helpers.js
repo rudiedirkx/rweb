@@ -274,28 +274,37 @@ rweb = {
 		}
 	},
 	js: function(js) {
-		var attachTo = document.head || document.body || document.documentElement;
+		const attachTo = document.head || document.body || document.documentElement;
 		if ( attachTo ) {
-			var el = document.createElement('script');
+			const el = document.createElement('script');
 			el.dataset.origin = 'rweb';
 
-			var wrap = function(cb, delay) {
+			const wrap = function(cb, delay) {
 				return delay == null ? cb : function() { setTimeout(cb, delay); };
 			};
-			var ready = function(cb, delay) {
+			const ready = function(cb, delay) {
 				cb = wrap(cb, delay);
 				document.readyState == 'interactive' || document.readyState == 'complete' ? cb() : document.addEventListener('DOMContentLoaded', cb);
 			};
-			var load = function(cb, delay) {
+			const load = function(cb, delay) {
 				cb = wrap(cb, delay);
 				document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true);
 			};
 
+			const extension = function(callback, data) {
+				return new Promise(resolve => {
+					const RWEB_CHANNEL = new BroadcastChannel('rweb');
+					RWEB_CHANNEL.postMessage({sendCallback: String(callback), sendData: data});
+					RWEB_CHANNEL.onmessage = e => e.data.receiveData && resolve(e.data.receiveData);
+				});
+			};
+
 			js =
 				'(function() {\n\n' +
-				"var wrap = " + String(wrap) + ";\n" +
-				"var ready = " + String(ready) + ";\n" +
-				"var load = " + String(load) + ";\n" +
+				"const wrap = " + String(wrap) + ";\n" +
+				"const ready = " + String(ready) + ";\n" +
+				"const load = " + String(load) + ";\n" +
+				"const extension = " + String(extension) + ";\n" +
 				"\n\n" +
 				js + "\n" +
 				"\n\n" +

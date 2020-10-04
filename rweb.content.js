@@ -1,3 +1,4 @@
+const RWEB_CHANNEL = new BroadcastChannel('rweb');
 
 /**
  * Load sites and inject CSS & JS
@@ -43,6 +44,14 @@ if ( document.documentElement && document.documentElement.nodeName == 'HTML' && 
 				}
 			}
 		}
+	});
+
+	RWEB_CHANNEL.addEventListener('message', function(e) {
+		if (!e.data.sendCallback) return;
+
+		const fn = new Function('data', 'resolve', `return (${e.data.sendCallback})(data, resolve)`);
+		const resolve = rsp => RWEB_CHANNEL.postMessage({receiveData: rsp});
+		fn(e.data.sendData, resolve);
 	});
 }
 
