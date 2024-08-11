@@ -32,7 +32,7 @@ if ( document.documentElement && document.documentElement.nodeName == 'HTML' && 
 							console.log('[RWeb] DOWNLOADED SITES!');
 						}
 						else {
-							console.warn('[RWeb] NOT DOWNLOADED...', response);
+							// console.warn('[RWeb] NOT DOWNLOADED...', response);
 						}
 					});
 				}

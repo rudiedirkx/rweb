@@ -126,7 +126,7 @@ rweb.identity && (rweb.sync = {
 					callback(token);
 				}
 				else {
-					console.warn("rweb.browser.identity.getAuthToken() didn't return a token!", rweb.browser.runtime.lastError);
+					// console.warn("rweb.browser.identity.getAuthToken() didn't return a token!", rweb.browser.runtime.lastError);
 
 					callback(false);
 				}

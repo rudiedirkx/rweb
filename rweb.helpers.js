@@ -273,11 +273,11 @@ rweb = {
 			rweb.insert(attachTo, el);
 		}
 	},
-	js: function(js) {
+	js: async function(js) {
 		const attachTo = document.head || document.body || document.documentElement;
 		if ( attachTo ) {
-			const el = document.createElement('script');
-			el.dataset.origin = 'rweb';
+			// const el = document.createElement('script');
+			// el.dataset.origin = 'rweb';
 
 			const wrap = function(cb, delay) {
 				return delay == null ? cb : function() { setTimeout(cb, delay); };
@@ -309,9 +309,13 @@ rweb = {
 				js + "\n" +
 				"\n\n" +
 				"})();\n";
-			el.textContent = js;
+			// el.textContent = js;
 
-			rweb.insert(attachTo, el);
+console.time('inject js');
+			await rweb.browser.runtime.sendMessage({
+				inject: {js},
+			});
+console.timeEnd('inject js');
 		}
 	},
 	insert: function(attachTo, el) {
