@@ -69,7 +69,6 @@ rweb = {
 	},
 
 	skipUrl: function(url) {
-		console.log('skip?', url);
 		return url.match(/^chrome(\-extension):\/\//) ? true : false;
 	},
 
@@ -311,11 +310,11 @@ rweb = {
 				"})();\n";
 			// el.textContent = js;
 
-console.time('inject js');
+// console.time('inject js');
 			await rweb.browser.runtime.sendMessage({
 				inject: {js},
 			});
-console.timeEnd('inject js');
+// console.timeEnd('inject js');
 		}
 	},
 	insert: function(attachTo, el) {

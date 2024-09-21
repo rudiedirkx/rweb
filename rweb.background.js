@@ -181,7 +181,7 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 			func: runscript,
 			args: [msg.inject.js],
 		});
-		sendResponse(true);
+		return sendResponse(true);
 	}
 
 	// Content script matched site
@@ -198,7 +198,7 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 			color: '#000',
 			tabId: sender.tab.id
 		});
-		sendResponse(true);
+		return sendResponse(true);
 	}
 
 	// Forced auto-download from content script
@@ -212,6 +212,7 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
 			sendResponse(summary);
 		}, true);
+		return;
 	}
 
 	// Options page closed
@@ -219,6 +220,11 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 		optionsClosedTimer = setTimeout(function() {
 			console.log('Uploading automatically, because options page closed');
 			rweb.sync.upload(function(summary) {
+				if (summary.unconnected) {
+					console.log('Nothing uploaded, because unconnected');
+					return;
+				}
+
 				var changes = !summary.dirty ? 0 : null;
 				rweb.log('upload', true, changes, function() {
 					// Log saved
@@ -226,14 +232,14 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
 				// Done
 				console.log('Automatic upload done');
-				sendResponse(true);
 			}, true);
 		}, 1000);
+		return sendResponse(true);
 	}
 
 	// Options page opened
 	if ( msg && msg.optionsOpened ) {
 		clearTimeout(optionsClosedTimer);
-		sendResponse(true);
+		return sendResponse(true);
 	}
 });

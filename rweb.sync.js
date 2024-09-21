@@ -234,6 +234,10 @@ console.log(`${interactive?'':'non-'}interactive auth failed`);
 
 		var start = function() {
 			rweb.sync.connect(false, function(token) {
+				if (!token) {
+					return callback({unconnected: true});
+				}
+
 				rweb.sync.drive.list(token, function(file) {
 					// File exists, overwrite
 					if ( file ) {
