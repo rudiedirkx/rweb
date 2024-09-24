@@ -2,13 +2,11 @@
 	"name": "RWeb",
 	"description": "Simple tool for customizing websites by adding your own CSS & JS.",
 	"version": "1.29",
-	"key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC1FCajQz8TcEsVum4AKd7bAfyjJSj9F7FuNFZIm1KTb5aVRIbUDD9joB3BZUzYzmW5BdkdYIaRMTP2bAramq9ep2eUHF3YbAPC24BrEbEKGnuPQDyHgN5pL/VFSzpYNA8Q9DfhzG10xpcNCivOdmLlA9fB4ugBpKhHntcZOrsCvQIDAQAB",
 
-	"permissions": [ "storage", "tabs", "contextMenus", "identity", "<all_urls>" ],
+	"permissions": [ "storage", "tabs", "contextMenus", "identity", "scripting", "activeTab" ],
+	"host_permissions": [ "https://*/*", "http://*/*" ],
 
-	"options_ui": {
-		"page": "options/options.html"
-	},
+	"options_page": "options/options.html",
 	"content_scripts": [
 		{
 			"all_frames": true,
@@ -18,9 +16,9 @@
 		}
 	],
 	"background": {
-		"scripts": [ "rweb.helpers.js", "rweb.sync.js", "rweb.background.js" ]
+		"service_worker": "rweb.background.js"
 	},
-	"browser_action": {
+	"action": {
 		"browser_style": false,
 		"default_title": "RWeb - Edit custom CSS/JS",
 		"default_icon": {
@@ -49,11 +47,5 @@
 		"32": "images/32x32.png",
 		"16": "images/16x16.png"
 	},
-	"manifest_version": 2,
-
-	"browser_specific_settings": {
-		"gecko": {
-			"id": "rweb@hotblocks.nl"
-		}
-	}
+	"manifest_version": 3
 }

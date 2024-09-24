@@ -118,19 +118,27 @@ rweb.identity && (rweb.sync = {
 		callback(summary);
 	},
 
-	connect: function(interactive, callback) {
+	connect: async function(interactive, callback) {
 		// Chrome
 		if ( rweb.browser.identity.getAuthToken ) {
-			return rweb.browser.identity.getAuthToken({interactive: interactive}, function(token) {
-				if ( token ) {
-					callback(token);
-				}
-				else {
-					console.warn("rweb.browser.identity.getAuthToken() didn't return a token!", rweb.browser.runtime.lastError);
+			var token;
+			try {
+				token = await rweb.browser.identity.getAuthToken({interactive});
+				token = token.token;
+			}
+			catch (ex) {
+				console.log(ex);
+			}
 
-					callback(false);
-				}
-			});
+			if ( token ) {
+				callback(token);
+			}
+			else {
+				// console.warn("rweb.browser.identity.getAuthToken() didn't return a token!", rweb.browser.runtime.lastError);
+
+				callback(false);
+			}
+			return token;
 		}
 
 		// WebExtensions (Firefox)
@@ -226,6 +234,10 @@ console.log(`${interactive?'':'non-'}interactive auth failed`);
 
 		var start = function() {
 			rweb.sync.connect(false, function(token) {
+				if (!token) {
+					return callback({unconnected: true});
+				}
+
 				rweb.sync.drive.list(token, function(file) {
 					// File exists, overwrite
 					if ( file ) {
@@ -271,8 +283,8 @@ console.debug(type + ':status', this.status + ' ' + this.statusText);
 				if ( this.status == 401 ) {
 					rweb.sync.connect(false, function(token) {
 						rweb.browser.identity.removeCachedAuthToken({token: token}, function() {
-							alert("Authentication error during '" + type + "'. Try again after this reload.");
-							location.reload(true);
+							alert("Authentication error during '" + type + "'. Reload page and try again.");
+							// location.reload(true);
 						});
 					});
 				}
@@ -301,24 +313,28 @@ console.debug(type + ':data', rsp);
 				// alert('There was an error connecting to Drive. Check the console.');
 			};
 		},
-		list: function(token, callback) {
-			var xhr = new XMLHttpRequest;
-			xhr.open('GET', 'https://www.googleapis.com/drive/v2/files', true);
-			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-			xhr.onload = rweb.sync.drive.wrapCallback('list', function(rsp) {
-				var file = rsp.items.find(file => file.mimeType == 'application/json');
+		headers: function(token, more = {}) {
+			return {
+				...more,
+				"Authorization": 'Bearer ' + token,
+			};
+		},
+		list: async function(token, callback) {
+			const rsp = await fetch(new Request('https://www.googleapis.com/drive/v2/files', {
+				method: 'GET',
+				headers: rweb.sync.drive.headers(token),
+			}));
+			const data = await rsp.json();
+			const file = data.items.find(file => file.mimeType == 'application/json');
 
-				// Immediately go on with processing
-				callback(file);
+			// Immediately go on with processing
+			callback(file);
 
-				// @todo Doesn't work very well in Firefox, and breaks (drive:list) in unpatched versions
-				// See if the RWeb file is in its own folder yet, or move it
-				// setTimeout(function() {
-				// 	rweb.sync.drive.moveToFolder(token, file);
-				// }, 1000);
-			});
-			xhr.onerror = rweb.sync.drive.wrapError('list');
-			xhr.send();
+			// @todo Doesn't work very well in Firefox, and breaks (drive:list) in unpatched versions
+			// See if the RWeb file is in its own folder yet, or move it
+			// setTimeout(function() {
+			// 	rweb.sync.drive.moveToFolder(token, file);
+			// }, 1000);
 		},
 		moveToFolder: function(token, file) {
 			if ( file && file.parents.length == 1 && file.parents[0].isRoot ) {
@@ -356,8 +372,8 @@ console.debug(type + ':data', rsp);
 			xhr.open('PATCH', 'https://www.googleapis.com/drive/v2/files/' + fileId + '?' + query, true);
 			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
 			xhr.setRequestHeader('Content-Type', 'application/json');
-			xhr.onload = rweb.sync.drive.wrapCallback('createFolder', callback);
-			xhr.onerror = rweb.sync.drive.wrapError('createFolder');
+			xhr.onload = rweb.sync.drive.wrapCallback('patch', callback);
+			xhr.onerror = rweb.sync.drive.wrapError('patch');
 			xhr.send('{}');
 		},
 		createFile: function(token, callback) {
@@ -375,45 +391,31 @@ console.debug(type + ':data', rsp);
 			};
 			xhr.send(JSON.stringify(data));
 		},
-		upload: function(token, fileId, callback) {
-			var xhr = new XMLHttpRequest;
-			xhr.open('PUT', 'https://www.googleapis.com/upload/drive/v2/files/' + fileId, true);
-			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-			xhr.setRequestHeader('Content-Type', 'application/json');
+		upload: async function(token, fileId, callback) {
+			const items = await rweb.browser.storage.local.get(['sites']);
 
-			rweb.browser.storage.local.get(['sites'], function(items) {
-				var sites = items.sites || [];
+			const sites = items.sites || [];
 console.debug('upload:output', sites);
 
-				xhr.onload = rweb.sync.drive.wrapCallback('upload', function(rsp) {
-					rweb.browser.storage.local.set({dirty: false}, function() {
-						callback(sites);
-					});
-				});
-				xhr.onerror = rweb.sync.drive.wrapError('upload');
-				xhr.send(JSON.stringify(sites));
-			});
-		},
-		download: function(token, file, callback) {
-			var xhr = new XMLHttpRequest;
-			xhr.open('GET', file.downloadUrl, true);
-			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-			xhr.onload = rweb.sync.drive.wrapLoad('download', function(e) {
-console.debug('download:load', this, e);
-				if ( !this.responseText ) {
-					return callback(false);
-				}
+			const rsp = await fetch(new Request('https://www.googleapis.com/upload/drive/v2/files/' + fileId, {
+				method: 'PUT',
+				headers: rweb.sync.drive.headers(token, {
+					"Content-Type": 'application/json',
+				}),
+				body: JSON.stringify(sites),
+			}));
 
-				try {
-					var data = JSON.parse(this.responseText);
-					callback(data);
-				}
-				catch (ex) {
-					return callback(false);
-				}
-			});
-			xhr.onerror = rweb.sync.drive.wrapError('download');
-			xhr.send();
+			await rweb.browser.storage.local.set({dirty: false});
+			callback(sites);
+		},
+		download: async function(token, file, callback) {
+			const rsp = await fetch(new Request(file.downloadUrl, {
+				method: 'GET',
+				headers: rweb.sync.drive.headers(token),
+			}));
+			const json = await rsp.text();
+			var data = JSON.parse(json);
+			callback(data);
 		}
 	}
 });

@@ -32,7 +32,7 @@ if ( document.documentElement && document.documentElement.nodeName == 'HTML' && 
 							console.log('[RWeb] DOWNLOADED SITES!');
 						}
 						else {
-							console.warn('[RWeb] NOT DOWNLOADED...', response);
+							// console.warn('[RWeb] NOT DOWNLOADED...', response);
 						}
 					});
 				}
@@ -71,6 +71,7 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 		else {
 			enableLocalRWebCSS(msg.rweb.css);
 		}
+		sendResponse(true);
 	}
 });
 
@@ -108,6 +109,6 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 		var css = msg.cssUpdate;
 		doCSSUpdate(css);
 
-		sendResponse({ok: 1});
+		sendResponse(true);
 	}
 });

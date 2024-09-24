@@ -1,30 +1,37 @@
+importScripts('rweb.helpers.js', 'rweb.sync.js');
+
+const labels = [
+	'Disable RWeb for DOMAIN',
+	'Re-enable RWeb for DOMAIN',
+];
+chrome.runtime.onInstalled.addListener(function(info) {
+	chrome.contextMenus.create({
+		"title": labels[0],
+		"id": 'rwebxable',
+		"contexts": ['action'],
+	});
+});
+
+chrome.contextMenus.onClicked.addListener(async function(info, tab) {
+	if (!tab.url) {
+		return console.warn('[RWeb] Could not read origin tab URL. Check optional permissions.');
+	}
+	const host = rweb.host(tab.url);
+
+	console.time('get & save disabled');
+	rweb.browser.storage.local.get('disabled', function(items) {
+		const disabled = items.disabled || {};
+		toggleDisabled(disabled, host, tab);
+	});
+});
+
+
 
 // try {
-	var labels = [
-			'Disable RWeb for DOMAIN',
-			'Re-enable RWeb for DOMAIN',
-		];
-
-	var browserActionMenuItemId = rweb.browser.contextMenus.create({
-		"title": labels[0],
-		"contexts": ['browser_action'],
-		"onclick": function(info, tab) {
-			if ( !tab.url ) {
-				return console.warn('[RWeb] Could not read origin tab URL. Check optional permissions.');
-			}
-			var host = rweb.host(tab.url);
-
-			console.time('get & save disabled');
-			rweb.browser.storage.local.get('disabled', function(items) {
-				var disabled = items.disabled || {};
-				toggleDisabled(disabled, host, tab);
-			});
-		}
-	});
 
 	function toggleDisabled(cache, host, tab) {
 		cache[host] = !cache[host];
-		var nowDisabled = cache[host];
+		const nowDisabled = cache[host];
 
 		// Save back into storage.local
 		if ( !cache[host] ) {
@@ -112,23 +119,23 @@
 	function updateLabel(disabled, host, tabId) {
 		// Update label
 		var newLabel = labels[ Number(disabled) ].replace('DOMAIN', host);
-		rweb.browser.contextMenus.update(browserActionMenuItemId, {"title": newLabel});
+		rweb.browser.contextMenus.update('rwebxable', {"title": newLabel});
 
 		// Update badge
 		if ( disabled ) {
 			// Show X on red
-			rweb.browser.browserAction.setBadgeBackgroundColor({
+			rweb.browser.action.setBadgeBackgroundColor({
 				color: [255, 0, 0, 255], // red
 				tabId: tabId,
 			});
-			rweb.browser.browserAction.setBadgeText({
+			rweb.browser.action.setBadgeText({
 				text: 'x',
 				tabId: tabId,
 			});
 		}
 		else {
 			// Hide X
-			rweb.browser.browserAction.setBadgeText({
+			rweb.browser.action.setBadgeText({
 				text: '',
 				tabId: tabId,
 			});
@@ -142,12 +149,11 @@
 	// DEBUG //
 // }
 
-rweb.browser.browserAction.onClicked.addListener(function(tab) {
-	var a = document.createElement('a');
-	a.href = tab.url;
-	var host = rweb.host(a.host);
+rweb.browser.action.onClicked.addListener(function(tab) {
+	const u = new URL(tab.url);
+	const host = rweb.host(u.host);
 
-	var uri = rweb.browser.extension.getURL('options/options.html');
+	var uri = rweb.browser.runtime.getURL('options/options.html');
 	uri += '#' + host;
 	rweb.browser.tabs.create({
 		url: uri,
@@ -159,20 +165,40 @@ rweb.browser.browserAction.onClicked.addListener(function(tab) {
 var optionsClosedTimer;
 
 rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+	// Inject JS
+	if ( msg && msg.inject && msg.inject.js ) {
+		const runscript = function(data) {
+			const scr = document.createElement('script');
+			scr.dataset.origin = 'rweb';
+			scr.textContent = data;
+			(document.head || document.body || document.documentElement).append(scr);
+		};
+		chrome.scripting.executeScript({
+			target: {
+				tabId: sender.tab.id
+			},
+			world: 'MAIN',
+			func: runscript,
+			args: [msg.inject.js],
+		});
+		return sendResponse(true);
+	}
+
 	// Content script matched site
 	if ( msg && msg.site ) {
-		rweb.browser.browserAction.getBadgeText({tabId: sender.tab.id}, function(text) {
+		rweb.browser.action.getBadgeText({tabId: sender.tab.id}, function(text) {
 			var num = (parseFloat(text) || 0) + 1;
-			rweb.browser.browserAction.setBadgeText({
+			rweb.browser.action.setBadgeText({
 				text: String(num),
 				tabId: sender.tab.id
 			});
 		});
 
-		rweb.browser.browserAction.setBadgeBackgroundColor({
+		rweb.browser.action.setBadgeBackgroundColor({
 			color: '#000',
 			tabId: sender.tab.id
 		});
+		return sendResponse(true);
 	}
 
 	// Forced auto-download from content script
@@ -186,7 +212,7 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
 			sendResponse(summary);
 		}, true);
-		return true;
+		return;
 	}
 
 	// Options page closed
@@ -194,6 +220,11 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 		optionsClosedTimer = setTimeout(function() {
 			console.log('Uploading automatically, because options page closed');
 			rweb.sync.upload(function(summary) {
+				if (summary.unconnected) {
+					console.log('Nothing uploaded, because unconnected');
+					return;
+				}
+
 				var changes = !summary.dirty ? 0 : null;
 				rweb.log('upload', true, changes, function() {
 					// Log saved
@@ -203,10 +234,12 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 				console.log('Automatic upload done');
 			}, true);
 		}, 1000);
+		return sendResponse(true);
 	}
 
 	// Options page opened
 	if ( msg && msg.optionsOpened ) {
 		clearTimeout(optionsClosedTimer);
+		return sendResponse(true);
 	}
 });
