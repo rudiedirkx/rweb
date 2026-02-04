@@ -3,10 +3,13 @@
 	"description": "Simple tool for customizing websites by adding your own CSS & JS.",
 	"version": "1.30",
 
-	"permissions": [ "storage", "tabs", "contextMenus", "identity", "scripting", "activeTab" ],
+	"permissions": [ "storage", "tabs", "contextMenus", "identity", "scripting", "activeTab", "declarativeNetRequest" ],
 	"host_permissions": [ "https://*/*", "http://*/*" ],
 
-	"options_page": "options/options.html",
+	"options_ui": {
+		"page": "options/options.html",
+		"open_in_tab": true
+	},
 	"content_scripts": [
 		{
 			"all_frames": true,

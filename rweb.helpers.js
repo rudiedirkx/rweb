@@ -66,6 +66,67 @@ rweb = {
 			lastSave: Date.now(),
 			dirty: true,
 		}, callback);
+
+		rweb.syncNetRules(sites);
+	},
+
+	syncNetRules: async function(sites) {
+		const {patterns, hasGlobal} = rweb.processDomainsForDNR(sites);
+		const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+		const removeRuleIds = existingRules.map(r => r.id);
+		const addRules = [];
+		let ruleId = 1;
+		const responseHeaders = [
+			{header: 'content-security-policy', operation: 'remove'},
+			{header: 'content-security-policy-report-only', operation: 'remove'}
+		];
+
+		if (hasGlobal) {
+			addRules.push({
+				id: ruleId++,
+				priority: 2,
+				action: {type: 'modifyHeaders', responseHeaders},
+				condition: {urlFilter: '*', resourceTypes: ['main_frame', 'sub_frame']}
+			});
+		}
+		else {
+			patterns.forEach(regex => {
+				addRules.push({
+					id: ruleId++,
+					priority: 1,
+					action: {type: 'modifyHeaders', responseHeaders},
+					condition: {regexFilter: regex, resourceTypes: ['main_frame', 'sub_frame']}
+				});
+			});
+		}
+
+		chrome.declarativeNetRequest.updateDynamicRules({removeRuleIds, addRules});
+	},
+
+	processDomainsForDNR: function(sites) {
+		const patterns = new Set();
+		let hasGlobal = false;
+		sites.forEach(site => {
+			if (!site.enabled) return;
+			const hosts = site.host.split(',');
+			hosts.forEach(h => {
+				const host = h.trim();
+				if (host === 'all') {
+					hasGlobal = true;
+					return;
+				}
+				if (host === 'options' || host === 'matches' || !host) {
+					return;
+				}
+
+				const pattern = host
+					.replace(/\./g, '\\.')
+					.replace(/\*\*/g, '[^:/]+')
+					.replace(/\*/g, '[^:/\\.]+');
+				patterns.add(`^https?://(www\.)?${pattern}([:/]|$)`);
+			});
+		});
+		return {patterns: Array.from(patterns), hasGlobal};
 	},
 
 	skipUrl: function(url) {
