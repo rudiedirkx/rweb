@@ -2,6 +2,8 @@
 rweb = {
 	MUST_DOWNLOAD_EVERY_N_MINUTES: 30,
 
+	ALL_URLS: '*://*/*',
+
 	// WebExtensions compatibility //
 	browser: typeof browser != 'undefined' ? browser : chrome,
 	// @todo Allow other auth than 'getAuthToken' when Drive CORS is fixed!?
@@ -60,19 +62,115 @@ rweb = {
 		});
 	},
 
-	saveSites: function(sites, callback) {
+	rwebDomainsToChromeMatches: function(domains) {
+		if (domains == 'all' || domains == 'matches' || domains.includes('**')) {
+			return [rweb.ALL_URLS];
+		}
+
+		const matches = [];
+		for (const host of domains.split(',')) {
+			const match = rweb.rwebHostToChromeMatches(host);
+			if (match == rweb.ALL_URLS) {
+				return [rweb.ALL_URLS];
+			}
+
+			matches.push(match);
+			if (!host.includes('*')) {
+				matches.push(match.replace('://', '://www.'));
+			}
+		}
+
+		return [...new Set(matches)];
+	},
+	rwebHostToChromeMatches: function(host) {
+		if (!host.includes('*')) {
+			return '*://' + host + '/*';
+		}
+
+		const parts = host.split('.');
+		const validSuffix = [];
+
+		for (let i = parts.length - 1; i >= 0; i--) {
+			if (parts[i].includes('*')) {
+				break;
+			}
+			validSuffix.unshift(parts[i]);
+		}
+
+		if (validSuffix.length === 0) {
+			return rweb.ALL_URLS;
+		}
+
+		return '*://*.' + validSuffix.join('.') + '/*';
+	},
+
+	singleSiteJsHeader: function(site) {
+		return '// ' + site.host.replace(',', ', ') + ' - ' + site.id + "\n";
+	},
+	saveSites: async function(sites, callback) {
 		rweb.browser.storage.local.set({
 			sites: sites,
 			lastSave: Date.now(),
 			dirty: true,
 		}, callback);
 
-		rweb.syncNetRules(sites);
+		await rweb.browser.userScripts.unregister();
+// console.log(sites[0]);
+		const doSites = sites
+			.filter(site => site.enabled)
+			// .sort((a, b) => parseInt(a.weight || 0) - parseInt(b.weight || 0));
+			.sort(rweb.siteSorter);
+// console.log(doSites);
+		const allHosts = new Set();
+		const allJs = [];
+		const matchesJs = [];
+		const scripts = [];
+		doSites.forEach(site => {
+			if (site.host == 'all') {
+				allJs.push(rweb.singleSiteJsHeader(site) + site.js);
+				return;
+			}
+			if (site.host == 'matches') {
+				matchesJs.push(rweb.singleSiteJsHeader(site) + site.js);
+				return;
+			}
+
+			site.host.split(',').forEach(host => allHosts.add(host));
+
+			const matches = rweb.rwebDomainsToChromeMatches(site.host);
+// console.log(site.host, matches);
+			const code = rweb.prepJs(allJs.concat(matchesJs).concat(rweb.singleSiteJsHeader(site) + site.js).join("\n\n"), site.host);
+// console.log(code);
+			scripts.push({
+				id: 'host-' + site.host + '-id-' + site.id,
+				matches,
+				js: [{code: code}],
+				world: 'MAIN',
+				runAt: 'document_start',
+				allFrames: true,
+			});
+		});
+// console.log(allHosts);
+		if (allJs.length) {
+			scripts.push({
+				id: 'all-other',
+				matches: [rweb.ALL_URLS],
+				js: [{code: rweb.prepJs(allJs.join("\n\n"), [...allHosts].join(','), true)}],
+				world: 'MAIN',
+				runAt: 'document_start',
+				allFrames: true,
+			});
+		}
+// console.log(scripts);
+		rweb.browser.userScripts.register(scripts);
+		// console.log(await rweb.browser.userScripts.getScripts());
+
+		// rweb.syncNetRules(sites);
 	},
 
 	syncNetRules: async function(sites) {
 		const {patterns, hasGlobal} = rweb.processDomainsForDNR(sites);
-		const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
+		const existingRules = await rweb.browser.declarativeNetRequest.getDynamicRules();
 		const removeRuleIds = existingRules.map(r => r.id);
 		const addRules = [];
 		let ruleId = 1;
@@ -100,7 +198,7 @@ rweb = {
 			});
 		}
 
-		chrome.declarativeNetRequest.updateDynamicRules({removeRuleIds, addRules});
+		rweb.browser.declarativeNetRequest.updateDynamicRules({removeRuleIds, addRules});
 	},
 
 	processDomainsForDNR: function(sites) {
@@ -119,10 +217,7 @@ rweb = {
 					return;
 				}
 
-				const pattern = host
-					.replace(/\./g, '\\.')
-					.replace(/\*\*/g, '[^:/]+')
-					.replace(/\*/g, '[^:/\\.]+');
+				const pattern = rweb.hostToRegex(host);
 				patterns.add(`^https?://(www\.)?${pattern}([:/]|$)`);
 			});
 		});
@@ -133,6 +228,12 @@ rweb = {
 		return url.match(/^chrome(\-extension):\/\//) ? true : false;
 	},
 
+	hostToRegex: function(host) {
+		return host
+			.replace(/([\.\-])/g, '\\$1')
+			.replace(/\*\*/g, '.+')
+			.replace(/\*/g, '[^\\.]+');
+	},
 	hostsMatch: function(hosts, host, options) {
 		options || (options = {});
 		var exact = options.exact != null ? options.exact : false;
@@ -145,11 +246,7 @@ rweb = {
 
 		hosts = hosts.split(',');
 		return hosts.some(function(subject) {
-			var regex = '^' + subject
-				.trim()
-				.replace(/([\.\-])/g, '\\$1')
-				.replace(/\*\*/g, '.+')
-				.replace(/\*/g, '[^\\.]+') + '$';
+			var regex = '^' + rweb.hostToRegex(subject) + '$';
 			return new RegExp(regex).test(host);
 		});
 	},
@@ -252,11 +349,12 @@ rweb = {
 				});
 			}
 
-			var css = '', js = '';
+			var css = '';
+			// var js = '';
 			var wildcard = 0, specific = 0;
 			sites.forEach(function(site) {
 				css += "\n" + site.css;
-				js += "\n" + site.js;
+				// js += "\n" + site.js;
 
 				if ( site.host == 'all' || site.host == 'matches' ) {
 					wildcard++;
@@ -272,7 +370,7 @@ rweb = {
 
 			var site = {
 				css: css.trim(),
-				js: js.trim(),
+				// js: js.trim(),
 				wildcard: wildcard,
 				specific: specific,
 			};
@@ -333,43 +431,78 @@ rweb = {
 			rweb.insert(attachTo, el);
 		}
 	},
+	prepJsHostEscape: function(hosts, reverse = false) {
+		const hostsLabel = reverse ? '<all>' : hosts.replaceAll(',', ', ');
+		const start = `console.debug("Start rweb '${hostsLabel}' for hostname '" + location.hostname + "'...");
+
+
+		`;
+
+		if (hosts == 'all' || hosts == 'matches') {
+			return start;
+		}
+
+		// @todo Use hostsMatch ?
+		// For all-sites-regex too
+		const regexes = [];
+		hosts.split(',').forEach(host => {
+			regexes.push(rweb.hostToRegex(host));
+		});
+		const regex = `/^(${regexes.join('|')})$/`;
+		const not = reverse ? '' : '!';
+		return `
+		if (${not}${regex}.test(location.hostname.replace(/^www\./, ''))) {
+			return console.debug("Skip rweb '${hostsLabel}' for hostname '" + location.hostname + "'.");
+		}
+		${start}
+		`;
+	},
+	prepJs: function(js, hosts, reverseEscape = false) {
+		const wrap = function(cb, delay) {
+			return delay == null ? cb : function() { setTimeout(cb, delay); };
+		};
+		const ready = function(cb, delay) {
+			cb = wrap(cb, delay);
+			document.readyState == 'interactive' || document.readyState == 'complete' ? cb() : document.addEventListener('DOMContentLoaded', cb);
+		};
+		const load = function(cb, delay) {
+			cb = wrap(cb, delay);
+			document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true);
+		};
+
+		const extension = function(callback, data) {
+			return new Promise(resolve => {
+				const RWEB_CHANNEL = new BroadcastChannel('rweb');
+				RWEB_CHANNEL.postMessage({sendCallback: String(callback), sendData: data});
+				RWEB_CHANNEL.onmessage = e => e.data.receiveData && resolve(e.data.receiveData);
+			});
+		};
+
+		js =
+			'(function() {\n\n' +
+			(hosts ? rweb.prepJsHostEscape(hosts, reverseEscape) : '') +
+			"document.documentElement.dataset.rwebUserScriptTime = Date.now();\n" +
+			// "document.documentElement.dataset.rwebTime = Date.now() - document.documentElement.dataset.rwebTime;\n" +
+			"const wrap = " + String(wrap) + ";\n" +
+			"const ready = " + String(ready) + ";\n" +
+			"const load = " + String(load) + ";\n" +
+			"const extension = " + String(extension) + ";\n" +
+			"\n\n" +
+			js + "\n" +
+			"\n\n" +
+			"})();\n";
+
+		return js;
+	},
 	js: async function(js) {
 		const attachTo = document.head || document.body || document.documentElement;
 		if ( attachTo ) {
 			// const el = document.createElement('script');
 			// el.dataset.origin = 'rweb';
 
-			const wrap = function(cb, delay) {
-				return delay == null ? cb : function() { setTimeout(cb, delay); };
-			};
-			const ready = function(cb, delay) {
-				cb = wrap(cb, delay);
-				document.readyState == 'interactive' || document.readyState == 'complete' ? cb() : document.addEventListener('DOMContentLoaded', cb);
-			};
-			const load = function(cb, delay) {
-				cb = wrap(cb, delay);
-				document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true);
-			};
-
-			const extension = function(callback, data) {
-				return new Promise(resolve => {
-					const RWEB_CHANNEL = new BroadcastChannel('rweb');
-					RWEB_CHANNEL.postMessage({sendCallback: String(callback), sendData: data});
-					RWEB_CHANNEL.onmessage = e => e.data.receiveData && resolve(e.data.receiveData);
-				});
-			};
-
-			js =
-				'(function() {\n\n' +
-				"const wrap = " + String(wrap) + ";\n" +
-				"const ready = " + String(ready) + ";\n" +
-				"const load = " + String(load) + ";\n" +
-				"const extension = " + String(extension) + ";\n" +
-				"\n\n" +
-				js + "\n" +
-				"\n\n" +
-				"})();\n";
+			const js = rweb.prepJs(js);
 			// el.textContent = js;
+			// attachTo.appendChild(el);
 
 // console.time('inject js');
 			await rweb.browser.runtime.sendMessage({

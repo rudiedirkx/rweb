@@ -7,6 +7,7 @@ const RWEB_CHANNEL = new BroadcastChannel('rweb');
 if ( document.documentElement && document.documentElement.nodeName == 'HTML' && location.protocol != 'chrome-extension:' ) {
 	var host = rweb.host(location.host);
 	rweb.site(host, function(site, meta) {
+		document.documentElement.dataset.rwebContentTime = Date.now();
 
 		var specific = site ? site.specific : 0;
 		var wildcard = site ? site.wildcard : 0;
@@ -20,7 +21,7 @@ if ( document.documentElement && document.documentElement.nodeName == 'HTML' && 
 
 			// Add CSS & JS
 			site.css && rweb.css(site.css);
-			site.js && rweb.js(site.js);
+			// site.js && rweb.js(site.js);
 		}
 
 		if ( !meta.lastDownload || meta.lastDownload < Date.now() - rweb.MUST_DOWNLOAD_EVERY_N_MINUTES * 60000 ) {
