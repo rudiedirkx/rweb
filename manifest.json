@@ -1,9 +1,9 @@
 {
 	"name": "RWeb",
 	"description": "Simple tool for customizing websites by adding your own CSS & JS.",
-	"version": "1.30",
+	"version": "1.32",
 
-	"permissions": [ "storage", "tabs", "contextMenus", "identity", "scripting", "activeTab", "declarativeNetRequest" ],
+	"permissions": [ "storage", "tabs", "contextMenus", "identity", "activeTab", "userScripts" ],
 	"host_permissions": [ "https://*/*", "http://*/*" ],
 
 	"options_ui": {

@@ -35,6 +35,7 @@ Element.extend({
 		if ( 'host' in options ) {
 			options.id || (options.id = id);
 		}
+		options.weight = parseInt(options.weight || 0) || 0;
 		return options;
 	},
 	getNamedElements: function() {
@@ -94,6 +95,8 @@ rweb.ui = {
 		$table = $sites.getFirst();
 		$newSite = $table.getElement('tbody');
 		$prefs = $('#prefs');
+
+		rweb.ui.initSavePermission();
 
 		// // BUILD SITES
 		rweb.ui.buildSites(function(sites) {
@@ -165,6 +168,36 @@ rweb.ui = {
 	},
 	dirty: function() {
 		return rweb.ui._state != JSON.encode(rweb.ui.settings());
+	},
+	initSavePermission: async function() {
+		const btnSave = $('#btn-save');
+		const btnSetup = $('#btn-setup');
+
+		$('#setup-banner').hidden = !!rweb.browser.userScripts;
+
+		const wasGranted = await rweb.browser.permissions.contains({
+			permissions: ['userScripts']
+		});
+		if (wasGranted) {
+			btnSave.disabled = false;
+			btnSetup.hidden = true;
+			return;
+		}
+
+		btnSave.disabled = true;
+		btnSetup.disabled = false;
+		btnSetup.on('click', async function(e) {
+			e.preventDefault();
+
+			const isGranted = await rweb.browser.permissions.request({
+				permissions: ['userScripts']
+			});
+			if (isGranted) {
+				btnSave.disabled = false;
+				btnSetup.hidden = true;
+				$('#setup-banner').hidden = true;
+			}
+		});
 	},
 	buildSites: function(callback) {
 		rweb.sites(null, function(sites) {

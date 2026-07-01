@@ -5,6 +5,11 @@ const labels = [
 	'Re-enable RWeb for DOMAIN',
 ];
 chrome.runtime.onInstalled.addListener(function(info) {
+	rweb.syncUserScripts().then(
+		scripts => console.log(scripts),
+		err => console.warn(err)
+	);
+
 	chrome.contextMenus.create({
 		"title": labels[0],
 		"id": 'rwebxable',
@@ -165,25 +170,6 @@ rweb.browser.action.onClicked.addListener(function(tab) {
 var optionsClosedTimer;
 
 rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-	// Inject JS
-	if ( msg && msg.inject && msg.inject.js ) {
-		const runscript = function(data) {
-			const scr = document.createElement('script');
-			scr.dataset.origin = 'rweb';
-			scr.textContent = data;
-			(document.head || document.body || document.documentElement).append(scr);
-		};
-		chrome.scripting.executeScript({
-			target: {
-				tabId: sender.tab.id
-			},
-			world: 'MAIN',
-			func: runscript,
-			args: [msg.inject.js],
-		});
-		return sendResponse(true);
-	}
-
 	// Content script matched site
 	if ( msg && msg.site ) {
 		rweb.browser.action.getBadgeText({tabId: sender.tab.id}, function(text) {

@@ -1,0 +1,31 @@
+diff --git a/manifest.json b/manifest.json
+index 6ab4db6..ac67eb5 100644
+--- a/manifest.json
++++ b/manifest.json
+@@ -5,3 +5,4 @@
+ 
+-	"permissions": [ "storage", "tabs", "contextMenus", "identity", "activeTab", "userScripts" ],
++	"permissions": [ "storage", "tabs", "contextMenus", "identity", "activeTab" ],
++	"optional_permissions": [ "userScripts" ],
+ 	"host_permissions": [ "https://*/*", "http://*/*" ],
+@@ -21,3 +22,3 @@
+ 	"background": {
+-		"service_worker": "rweb.background.js"
++		"scripts": ["rweb.helpers.js", "rweb.sync.js", "rweb.background.js"]
+ 	},
+@@ -44,2 +45,7 @@
+ 	},
++	"browser_specific_settings": {
++		"gecko": {
++			"id": "rweb@hotblocks.nl"
++		}
++	},
+ 
+diff --git a/rweb.background.js b/rweb.background.js
+index 8616a2f..f111bd1 100644
+--- a/rweb.background.js
++++ b/rweb.background.js
+@@ -1,2 +1,2 @@
+-importScripts('rweb.helpers.js', 'rweb.sync.js');
++// importScripts('rweb.helpers.js', 'rweb.sync.js');
+ 

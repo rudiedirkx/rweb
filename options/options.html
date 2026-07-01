@@ -10,6 +10,8 @@
 
 <body class="loading">
 
+<div id="setup-banner" hidden>RWeb needs permission to run your scripts. Switch on <strong>user scripts</strong> in your browser's extension settings (Chrome), or click SET-UP in the footer (Firefox), then reload and press <strong>Save</strong>.</div>
+
 <p data-notifid="1">Saving this form from within a textfield (CTRL + S), will propagate CSS to all relevant open tabs.</p>
 <p data-notifid="3">You can UPLOAD and DOWNLOAD data to/from Google Drive. You can do it manually at any point. It happens automatically every 30 mins (download) and when you close this page (upload).</p>
 <p data-notifid="4">The domain wildcard has changed from <code>*</code> to <code>all</code>. The domain <code>matches</code> now triggers for all sites that match on a specific domain!</p>
@@ -72,7 +74,8 @@ load(function() {
 		<tfoot>
 			<tr>
 				<td class="actions" colspan="3">
-					<button class="submit" disabled>Save</button>
+					<button id="btn-save" class="submit" disabled data-disabled>Save</button>
+					<button id="btn-setup" class="submit" disabled data-disabled>Set-up first</button>
 					&nbsp;
 					<button id="btn-export" disabled>Export</button>
 					<button id="btn-import" disabled>Import</button>

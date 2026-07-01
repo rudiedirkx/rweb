@@ -2,6 +2,8 @@
 rweb = {
 	MUST_DOWNLOAD_EVERY_N_MINUTES: 30,
 
+	ALL_URLS: '*://*/*',
+
 	// WebExtensions compatibility //
 	browser: typeof browser != 'undefined' ? browser : chrome,
 	// @todo Allow other auth than 'getAuthToken' when Drive CORS is fixed!?
@@ -60,79 +62,141 @@ rweb = {
 		});
 	},
 
-	saveSites: function(sites, callback) {
-		rweb.browser.storage.local.set({
+	rwebDomainsToChromeMatches: function(domains) {
+		if (domains == 'all' || domains == 'matches' || domains.includes('**')) {
+			return [rweb.ALL_URLS];
+		}
+
+		const matches = [];
+		for (const host of domains.split(',')) {
+			const match = rweb.rwebHostToChromeMatches(host);
+			if (match == rweb.ALL_URLS) {
+				return [rweb.ALL_URLS];
+			}
+
+			matches.push(match);
+			if (!host.includes('*')) {
+				matches.push(match.replace('://', '://www.'));
+			}
+		}
+
+		return [...new Set(matches)];
+	},
+	rwebHostToChromeMatches: function(host) {
+		if (!host.includes('*')) {
+			return '*://' + host + '/*';
+		}
+
+		const parts = host.split('.');
+		const validSuffix = [];
+
+		for (let i = parts.length - 1; i >= 0; i--) {
+			if (parts[i].includes('*')) {
+				break;
+			}
+			validSuffix.unshift(parts[i]);
+		}
+
+		if (validSuffix.length === 0) {
+			return rweb.ALL_URLS;
+		}
+
+		return '*://*.' + validSuffix.join('.') + '/*';
+	},
+
+	singleSiteJsHeader: function(site) {
+		return '// ' + site.host.replaceAll(',', ', ') + ' - ' + site.id + "\n";
+	},
+
+	saveSites: async function(sites, callback) {
+		await rweb.storeSites(sites);
+		const scripts = await rweb.syncUserScripts();
+		console.log(scripts);
+		if (callback) callback();
+	},
+
+	storeSites: async function(sites) {
+		return rweb.browser.storage.local.set({
 			sites: sites,
 			lastSave: Date.now(),
 			dirty: true,
-		}, callback);
-
-		rweb.syncNetRules(sites);
+		});
 	},
 
-	syncNetRules: async function(sites) {
-		const {patterns, hasGlobal} = rweb.processDomainsForDNR(sites);
-		const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-		const removeRuleIds = existingRules.map(r => r.id);
-		const addRules = [];
-		let ruleId = 1;
-		const responseHeaders = [
-			{header: 'content-security-policy', operation: 'remove'},
-			{header: 'content-security-policy-report-only', operation: 'remove'}
-		];
-
-		if (hasGlobal) {
-			addRules.push({
-				id: ruleId++,
-				priority: 2,
-				action: {type: 'modifyHeaders', responseHeaders},
-				condition: {urlFilter: '*', resourceTypes: ['main_frame', 'sub_frame']}
-			});
-		}
-		else {
-			patterns.forEach(regex => {
-				addRules.push({
-					id: ruleId++,
-					priority: 1,
-					action: {type: 'modifyHeaders', responseHeaders},
-					condition: {regexFilter: regex, resourceTypes: ['main_frame', 'sub_frame']}
-				});
-			});
+	syncUserScripts: async function() {
+		if (!rweb.browser.userScripts) {
+			return [];
 		}
 
-		chrome.declarativeNetRequest.updateDynamicRules({removeRuleIds, addRules});
+		const {sites} = await rweb.browser.storage.local.get('sites');
+		const scripts = rweb.buildUserScripts(sites || []);
+
+		await rweb.browser.userScripts.unregister();
+		if (scripts.length) {
+			await rweb.browser.userScripts.register(scripts);
+		}
+		return scripts;
 	},
 
-	processDomainsForDNR: function(sites) {
-		const patterns = new Set();
-		let hasGlobal = false;
-		sites.forEach(site => {
-			if (!site.enabled) return;
-			const hosts = site.host.split(',');
-			hosts.forEach(h => {
-				const host = h.trim();
-				if (host === 'all') {
-					hasGlobal = true;
-					return;
-				}
-				if (host === 'options' || host === 'matches' || !host) {
-					return;
-				}
+	buildUserScripts: function(sites) {
+		const doSites = sites
+			.filter(site => site.enabled && site.js)
+			.sort(rweb.siteSorter);
 
-				const pattern = host
-					.replace(/\./g, '\\.')
-					.replace(/\*\*/g, '[^:/]+')
-					.replace(/\*/g, '[^:/\\.]+');
-				patterns.add(`^https?://(www\.)?${pattern}([:/]|$)`);
+		const allHosts = new Set();
+		const allJs = [];
+		const matchesJs = [];
+		const scripts = [];
+
+		doSites.forEach(site => {
+			if (site.host == 'all') {
+				allJs.push(rweb.singleSiteJsHeader(site) + site.js);
+				return;
+			}
+			if (site.host == 'matches') {
+				matchesJs.push(rweb.singleSiteJsHeader(site) + site.js);
+				return;
+			}
+
+			site.host.split(',').forEach(host => allHosts.add(host));
+
+			const matches = rweb.rwebDomainsToChromeMatches(site.host);
+			const code = rweb.prepJs([...allJs, ...matchesJs, rweb.singleSiteJsHeader(site) + site.js].join("\n\n"), site.host);
+			scripts.push({
+				id: 'host-' + site.host + '-id-' + site.id,
+				matches: matches,
+				js: [{code: code}],
+				world: 'MAIN',
+				runAt: 'document_start',
+				allFrames: true,
 			});
 		});
-		return {patterns: Array.from(patterns), hasGlobal};
+
+		if (allJs.length) {
+			const allCode = rweb.prepJs(allJs.join("\n\n"), [...allHosts].join(','), true);
+			scripts.push({
+				id: 'all-other',
+				matches: [rweb.ALL_URLS],
+				js: [{code: allCode}],
+				world: 'MAIN',
+				runAt: 'document_start',
+				allFrames: true,
+			});
+		}
+
+		return scripts;
 	},
 
 	skipUrl: function(url) {
 		return url.match(/^chrome(\-extension):\/\//) ? true : false;
 	},
 
+	hostToRegex: function(host) {
+		return host
+			.replace(/([\.\-])/g, '\\$1')
+			.replace(/\*\*/g, '.+')
+			.replace(/\*/g, '[^\\.]+');
+	},
 	hostsMatch: function(hosts, host, options) {
 		options || (options = {});
 		var exact = options.exact != null ? options.exact : false;
@@ -145,11 +209,7 @@ rweb = {
 
 		hosts = hosts.split(',');
 		return hosts.some(function(subject) {
-			var regex = '^' + subject
-				.trim()
-				.replace(/([\.\-])/g, '\\$1')
-				.replace(/\*\*/g, '.+')
-				.replace(/\*/g, '[^\\.]+') + '$';
+			var regex = '^' + rweb.hostToRegex(subject) + '$';
 			return new RegExp(regex).test(host);
 		});
 	},
@@ -252,11 +312,10 @@ rweb = {
 				});
 			}
 
-			var css = '', js = '';
+			var css = '';
 			var wildcard = 0, specific = 0;
 			sites.forEach(function(site) {
 				css += "\n" + site.css;
-				js += "\n" + site.js;
 
 				if ( site.host == 'all' || site.host == 'matches' ) {
 					wildcard++;
@@ -272,7 +331,6 @@ rweb = {
 
 			var site = {
 				css: css.trim(),
-				js: js.trim(),
 				wildcard: wildcard,
 				specific: specific,
 			};
@@ -333,50 +391,68 @@ rweb = {
 			rweb.insert(attachTo, el);
 		}
 	},
-	js: async function(js) {
-		const attachTo = document.head || document.body || document.documentElement;
-		if ( attachTo ) {
-			// const el = document.createElement('script');
-			// el.dataset.origin = 'rweb';
+	prepJsHostEscape: function(hosts, reverse = false) {
+		const hostsLabel = reverse ? '<all>' : hosts.replaceAll(',', ', ');
+		const start = `console.debug("Start rweb '${hostsLabel}' for hostname '" + location.hostname + "'...");
 
-			const wrap = function(cb, delay) {
-				return delay == null ? cb : function() { setTimeout(cb, delay); };
-			};
-			const ready = function(cb, delay) {
-				cb = wrap(cb, delay);
-				document.readyState == 'interactive' || document.readyState == 'complete' ? cb() : document.addEventListener('DOMContentLoaded', cb);
-			};
-			const load = function(cb, delay) {
-				cb = wrap(cb, delay);
-				document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true);
-			};
 
-			const extension = function(callback, data) {
-				return new Promise(resolve => {
-					const RWEB_CHANNEL = new BroadcastChannel('rweb');
-					RWEB_CHANNEL.postMessage({sendCallback: String(callback), sendData: data});
-					RWEB_CHANNEL.onmessage = e => e.data.receiveData && resolve(e.data.receiveData);
-				});
-			};
+		`;
 
-			js =
-				'(function() {\n\n' +
-				"const wrap = " + String(wrap) + ";\n" +
-				"const ready = " + String(ready) + ";\n" +
-				"const load = " + String(load) + ";\n" +
-				"const extension = " + String(extension) + ";\n" +
-				"\n\n" +
-				js + "\n" +
-				"\n\n" +
-				"})();\n";
-			// el.textContent = js;
-
-// console.time('inject js');
-			await rweb.browser.runtime.sendMessage({
-				inject: {js},
-			});
-// console.timeEnd('inject js');
+		if (hosts == 'all' || hosts == 'matches') {
+			return start;
 		}
+
+		// @todo Use hostsMatch ?
+		// For all-sites-regex too
+		const regexes = [];
+		hosts.split(',').forEach(host => {
+			regexes.push(rweb.hostToRegex(host));
+		});
+		const regex = `/^(${regexes.join('|')})$/`;
+		const not = reverse ? '' : '!';
+		return `
+		if (${not}${regex}.test(location.hostname.replace(/^www\./, ''))) {
+			return console.debug("Skip rweb '${hostsLabel}' for hostname '" + location.hostname + "'.");
+		}
+		${start}
+		`;
+	},
+	prepJs: function(js, hosts, reverseEscape = false) {
+		const wrap = function(cb, delay) {
+			return delay == null ? cb : function() { setTimeout(cb, delay); };
+		};
+		const ready = function(cb, delay) {
+			cb = wrap(cb, delay);
+			document.readyState == 'interactive' || document.readyState == 'complete' ? cb() : document.addEventListener('DOMContentLoaded', cb);
+		};
+		const load = function(cb, delay) {
+			cb = wrap(cb, delay);
+			document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true);
+		};
+
+		const extension = function(callback, data) {
+			return new Promise(resolve => {
+				const RWEB_CHANNEL = new BroadcastChannel('rweb');
+				RWEB_CHANNEL.postMessage({sendCallback: String(callback), sendData: data});
+				RWEB_CHANNEL.onmessage = e => e.data.receiveData && resolve(e.data.receiveData);
+			});
+		};
+
+		js =
+			'(function() {\n\n' +
+			(hosts ? rweb.prepJsHostEscape(hosts, reverseEscape) : '') +
+			"document.documentElement.dataset.rwebUserScriptTime = Date.now();\n" +
+			// "document.documentElement.dataset.rwebTime = Date.now() - document.documentElement.dataset.rwebTime;\n" +
+			"const wrap = " + String(wrap) + ";\n" +
+			"const ready = " + String(ready) + ";\n" +
+			"const load = " + String(load) + ";\n" +
+			"const extension = " + String(extension) + ";\n" +
+			"\n\n" +
+			js + "\n" +
+			"\n\n" +
+			"})();\n";
+
+		return js;
 	},
 	insert: function(attachTo, el) {
 		if ( attachTo.firstElementChild ) {

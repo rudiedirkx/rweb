@@ -85,6 +85,19 @@ body.loading::before {
 
 
 
+#setup-banner {
+	position: sticky;
+	top: 0;
+	z-index: 1000;
+	margin: -20px -20px 20px;
+	padding: 8px 20px;
+	background: #c00;
+	color: white;
+	border-bottom: solid 1px #e6d28a;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
 p[data-notifid] a {
 	font-weight: bold;
 	color: inherit;
