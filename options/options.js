@@ -900,9 +900,7 @@ document.body.onload = function() {
 
 	// Upload when closing options page
 	window.on('beforeunload', function(e) {
-		rweb.browser.runtime.sendMessage({optionsClosed: true}, function(response) {
-			// This tab is gone already
-		});
+		rweb.browser.runtime.sendMessage({optionsClosed: true});
 	});
 
 	// Init

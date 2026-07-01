@@ -198,7 +198,7 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
 			sendResponse(summary);
 		}, true);
-		return;
+		return true;
 	}
 
 	// Options page closed
