@@ -25,6 +25,10 @@ if ( document.documentElement && document.documentElement.nodeName == 'HTML' && 
 			site.css && rweb.css(site.css);
 			console.debug('[RWeb] Injected CSS');
 		}
+		else if ( site && meta.disabled ) {
+			disableLocalRWebCSS();
+			console.debug('[RWeb] Skipping CSS due to disabled');
+		}
 
 		if ( !meta.lastDownload || meta.lastDownload < Date.now() - rweb.MUST_DOWNLOAD_EVERY_N_MINUTES * 60000 ) {
 			if ( !meta.downloadingSince || meta.downloadingSince < Date.now() - 10000 ) {
@@ -96,13 +100,6 @@ function enableLocalRWebCSS(css) {
 
 function doCSSUpdate(css) {
 	console.debug('[RWeb] Updating CSS:', rweb.thousands(css.length) + ' bytes');
-
-	// Delete existing style[data-origin="rweb"]
-	[].forEach.call(document.querySelectorAll('style[data-origin="rweb"]'), function(el) {
-		el.remove();
-	});
-
-	// Create 1 new style[data-origin="rweb"]
 	rweb.css(css);
 }
 

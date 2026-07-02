@@ -5,16 +5,19 @@ const labels = [
 	'Re-enable RWeb for DOMAIN',
 ];
 chrome.runtime.onInstalled.addListener(function(info) {
-	rweb.syncUserScripts().then(
-		scripts => console.log(scripts),
-		err => console.warn(err)
-	);
+	rweb.syncUserScripts();
 
 	chrome.contextMenus.create({
 		"title": labels[0],
 		"id": 'rwebxable',
 		"contexts": ['action'],
 	});
+});
+
+rweb.browser.storage.local.onChanged.addListener(function(changes) {
+	if (changes.disabled) {
+		rweb.syncUserScripts();
+	}
 });
 
 chrome.contextMenus.onClicked.addListener(async function(info, tab) {
@@ -169,7 +172,6 @@ rweb.browser.action.onClicked.addListener(function(tab) {
 
 var optionsClosedTimer;
 
-// In-flight download, so simultaneous triggers (like session restore) share one download
 var downloadPromise = null;
 
 rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {

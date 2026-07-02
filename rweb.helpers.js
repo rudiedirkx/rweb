@@ -111,7 +111,6 @@ rweb = {
 	saveSites: async function(sites, callback) {
 		await rweb.storeSites(sites);
 		const scripts = await rweb.syncUserScripts();
-		console.log(scripts);
 		if (callback) callback();
 	},
 
@@ -128,8 +127,9 @@ rweb = {
 			return [];
 		}
 
-		const {sites} = await rweb.browser.storage.local.get('sites');
-		const scripts = rweb.buildUserScripts(sites || []);
+		const {sites, disabled} = await rweb.browser.storage.local.get(['sites', 'disabled']);
+		const scripts = rweb.buildUserScripts(sites || [], disabled || {});
+		console.debug('[RWeb] userScripts', scripts);
 
 		await rweb.browser.userScripts.unregister();
 		if (scripts.length) {
@@ -138,10 +138,14 @@ rweb = {
 		return scripts;
 	},
 
-	buildUserScripts: function(sites) {
+	buildUserScripts: function(sites, disabled) {
 		const doSites = sites
 			.filter(site => site.enabled && site.js)
 			.sort(rweb.siteSorter);
+
+		const excludeMatches = Object.keys(disabled || {})
+			.filter(host => disabled[host])
+			.flatMap(host => ['*://' + host + '/*', '*://www.' + host + '/*']);
 
 		const allHosts = new Set();
 		const allJs = [];
@@ -161,10 +165,15 @@ rweb = {
 			site.host.split(',').forEach(host => allHosts.add(host));
 
 			const matches = rweb.rwebDomainsToChromeMatches(site.host);
-			const code = rweb.prepJs([...allJs, ...matchesJs, rweb.singleSiteJsHeader(site) + site.js].join("\n\n"), site.host);
+			const code = rweb.prepJs([
+				...allJs,
+				...matchesJs,
+				rweb.singleSiteJsHeader(site) + site.js.replaceAll('__RWEB_CSS__', () => JSON.stringify(site.css)),
+			].join("\n\n"), site.host);
 			scripts.push({
 				id: 'host-' + site.host + '-id-' + site.id,
 				matches: matches,
+				excludeMatches: excludeMatches,
 				js: [{code: code}],
 				world: 'MAIN',
 				runAt: 'document_start',
@@ -177,6 +186,7 @@ rweb = {
 			scripts.push({
 				id: 'all-other',
 				matches: [rweb.ALL_URLS],
+				excludeMatches: excludeMatches,
 				js: [{code: allCode}],
 				world: 'MAIN',
 				runAt: 'document_start',
@@ -188,7 +198,6 @@ rweb = {
 	},
 
 	skipUrl: function(url) {
-		// Content scripts exist only on http(s), so skip chrome://, file://, about: etc
 		return !/^https?:\/\//.test(url);
 	},
 
@@ -377,15 +386,22 @@ rweb = {
 	},
 
 	css: function(css) {
+		[].forEach.call(document.querySelectorAll('style[data-origin="rweb"]'), function(el) {
+			el.remove();
+		});
+
 		var attachTo = document.head || document.body || document.documentElement;
 		if ( attachTo ) {
-			var css = css.trim();
-
 			var el = document.createElement('style');
 			el.dataset.origin = 'rweb';
 			el.textContent = css.trim();
 
-			rweb.insert(attachTo, el);
+			if ( attachTo.firstElementChild ) {
+				attachTo.insertBefore(el, attachTo.firstElementChild);
+			}
+			else {
+				attachTo.appendChild(el);
+			}
 		}
 	},
 	prepJsHostEscape: function(hosts, reverse = false) {
@@ -444,6 +460,7 @@ rweb = {
 			"const ready = " + String(ready) + ";\n" +
 			"const load = " + String(load) + ";\n" +
 			"const extension = " + String(extension) + ";\n" +
+			"const injectCSS = " + String(rweb.css) + ";\n" +
 			"\n\n" +
 			js + "\n" +
 			"\n\n" +
@@ -451,15 +468,6 @@ rweb = {
 
 		return js;
 	},
-	insert: function(attachTo, el) {
-		if ( attachTo.firstElementChild ) {
-			attachTo.insertBefore(el, attachTo.firstElementChild);
-		}
-		else {
-			attachTo.appendChild(el);
-		}
-	},
-
 	thousands: function(num, nokilo) {
 		if ( !nokilo && num > 1100 ) {
 			return rweb.thousands(num/1000, true) + ' k';
