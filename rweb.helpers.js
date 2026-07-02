@@ -188,7 +188,8 @@ rweb = {
 	},
 
 	skipUrl: function(url) {
-		return url.match(/^chrome(\-extension):\/\//) ? true : false;
+		// Content scripts exist only on http(s), so skip chrome://, file://, about: etc
+		return !/^https?:\/\//.test(url);
 	},
 
 	hostToRegex: function(host) {
@@ -261,7 +262,6 @@ rweb = {
 	},
 
 	sites: function(host, callback, options) {
-		// console.time('rweb.sites ("' + host + '")');
 		rweb.browser.storage.local.get(['sites', 'dirty', 'disabled', 'lastDownload', 'downloadingSince'], function(items) {
 			var dirty = Boolean(items.dirty);
 			var disabled = host && items.disabled && items.disabled[host] ? true : false;
@@ -293,9 +293,6 @@ rweb = {
 				sites.sort(rweb.siteSorter);
 			}
 
-			if ( host && !meta.disabled ) {
-				// console.timeEnd('rweb.sites ("' + host + '")');
-			}
 			callback(sites, meta);
 		});
 	},
@@ -393,7 +390,7 @@ rweb = {
 	},
 	prepJsHostEscape: function(hosts, reverse = false) {
 		const hostsLabel = reverse ? '<all>' : hosts.replaceAll(',', ', ');
-		const start = `console.debug("Start rweb '${hostsLabel}' for hostname '" + location.hostname + "'...");
+		const start = `console.debug("[RWeb] Start '${hostsLabel}' for hostname '" + location.hostname + "'...");
 
 
 		`;
@@ -412,7 +409,7 @@ rweb = {
 		const not = reverse ? '' : '!';
 		return `
 		if (${not}${regex}.test(location.hostname.replace(/^www\./, ''))) {
-			return console.debug("Skip rweb '${hostsLabel}' for hostname '" + location.hostname + "'.");
+			return console.debug("[RWeb] Skip '${hostsLabel}' for hostname '" + location.hostname + "'.");
 		}
 		${start}
 		`;

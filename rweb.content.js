@@ -5,7 +5,7 @@ const RWEB_CHANNEL = new BroadcastChannel('rweb');
  */
 
 if ( document.documentElement && document.documentElement.nodeName == 'HTML' && location.protocol != 'chrome-extension:' ) {
-	console.debug('Start rweb content');
+	console.debug('[RWeb] Start rweb content');
 
 	var host = rweb.host(location.host);
 	rweb.site(host, function(site, meta) {
@@ -23,7 +23,7 @@ if ( document.documentElement && document.documentElement.nodeName == 'HTML' && 
 
 			// Add CSS (JS is injected via the userScripts API, see syncUserScripts)
 			site.css && rweb.css(site.css);
-			console.debug('Injected rweb CSS');
+			console.debug('[RWeb] Injected CSS');
 		}
 
 		if ( !meta.lastDownload || meta.lastDownload < Date.now() - rweb.MUST_DOWNLOAD_EVERY_N_MINUTES * 60000 ) {

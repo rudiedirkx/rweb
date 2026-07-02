@@ -169,6 +169,9 @@ rweb.browser.action.onClicked.addListener(function(tab) {
 
 var optionsClosedTimer;
 
+// In-flight download, so simultaneous triggers (like session restore) share one download
+var downloadPromise = null;
+
 rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 	// Content script matched site
 	if ( msg && msg.site ) {
@@ -189,15 +192,25 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 
 	// Forced auto-download from content script
 	if ( msg && msg.forceAutoDownload ) {
-		rweb.sync.download(function(summary) {
-			if ( summary.imported ) {
-				rweb.log('download', true, summary.changes, function() {
-					// Log saved
-				});
-			}
+		if ( !downloadPromise ) {
+			downloadPromise = new Promise(function(resolve) {
+				rweb.sync.download(resolve, true);
+			});
+			downloadPromise.then(function(summary) {
+				downloadPromise = null;
 
-			sendResponse(summary);
-		}, true);
+				if ( summary.imported ) {
+					rweb.log('download', true, summary.changes, function() {
+						// Log saved
+					});
+				}
+			});
+		}
+		else {
+			console.log('[RWeb] Download already in progress, sharing its result');
+		}
+
+		downloadPromise.then(sendResponse);
 		return true;
 	}
 
