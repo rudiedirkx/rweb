@@ -219,7 +219,7 @@ rweb = {
 
 		hosts = hosts.split(',');
 		return hosts.some(function(subject) {
-			var regex = '^' + rweb.hostToRegex(subject) + '$';
+			var regex = '^' + rweb.hostToRegex(subject.trim()) + '$';
 			return new RegExp(regex).test(host);
 		});
 	},
