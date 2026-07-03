@@ -178,8 +178,6 @@ rweb.browser.action.onClicked.addListener(function(tab) {
 	});
 });
 
-var optionsClosedTimer;
-
 var downloadPromise = null;
 
 rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
@@ -223,32 +221,30 @@ rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
 		downloadPromise.then(sendResponse);
 		return true;
 	}
+});
 
-	// Options page closed
-	if ( msg && msg.optionsClosed && rweb.sync ) {
-		optionsClosedTimer = setTimeout(function() {
-			console.log('Uploading automatically, because options page closed');
-			rweb.sync.upload(function(summary) {
-				if (summary.unconnected) {
-					console.log('Nothing uploaded, because unconnected');
-					return;
-				}
+// Options page closed
+rweb.browser.tabs.onRemoved.addListener(function(tabId, removeInfo) {
+	if ( !rweb.sync ) return;
 
-				var changes = !summary.dirty ? 0 : null;
-				rweb.log('upload', true, changes, function() {
-					// Log saved
-				});
+	rweb.browser.storage.session.get('optionsTabId', function(items) {
+		if ( items.optionsTabId != tabId ) return;
+		rweb.browser.storage.session.remove('optionsTabId');
 
-				// Done
-				console.log('Automatic upload done');
-			}, true);
-		}, 1000);
-		return sendResponse(true);
-	}
+		console.log('Uploading automatically, because options page closed');
+		rweb.sync.upload(function(summary) {
+			if (summary.unconnected) {
+				console.log('Nothing uploaded, because unconnected');
+				return;
+			}
 
-	// Options page opened
-	if ( msg && msg.optionsOpened ) {
-		clearTimeout(optionsClosedTimer);
-		return sendResponse(true);
-	}
+			var changes = !summary.dirty ? 0 : null;
+			rweb.log('upload', true, changes, function() {
+				// Log saved
+			});
+
+			// Done
+			console.log('Automatic upload done');
+		}, true);
+	});
 });

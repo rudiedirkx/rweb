@@ -102,17 +102,13 @@ rweb.ui = {
 					return;
 				}
 
+				rweb.browser.storage.session.set({optionsTabId: current.id});
 				rweb.ui.init();
 			});
 		});
 	},
 
 	init: function() {
-		// Upload when closing options page
-		window.on('beforeunload', function(e) {
-			rweb.browser.runtime.sendMessage({optionsClosed: true});
-		});
-
 		// Elements
 		$sites = $('#sites');
 		$table = $sites.getFirst();
@@ -174,10 +170,6 @@ rweb.ui = {
 			document.body.removeClass('loading');
 
 			$$('tfoot button:not([data-disabled])').prop('disabled', false);
-
-			rweb.browser.runtime.sendMessage({optionsOpened: true}, function(response) {
-				// No relevant response
-			});
 		});
 
 		// SHOW PREFERENCES
