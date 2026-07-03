@@ -52,6 +52,15 @@ rweb = {
 		});
 	},
 
+	optionsTabs: function(callback) {
+		var uri = rweb.browser.runtime.getURL('options/options.html');
+		rweb.browser.tabs.query({}, function(tabs) {
+			callback(tabs.filter(function(tab) {
+				return tab.url && tab.url.indexOf(uri) === 0;
+			}));
+		});
+	},
+
 	matched: function(host, callback) {
 		rweb.browser.storage.local.get('history', function(items) {
 			var history = items.history || {};

@@ -161,12 +161,20 @@ rweb.browser.action.onClicked.addListener(function(tab) {
 	const u = new URL(tab.url);
 	const host = rweb.host(u.host);
 
-	var uri = rweb.browser.runtime.getURL('options/options.html');
-	uri += '#' + host;
-	rweb.browser.tabs.create({
-		url: uri,
-		index: tab.index + 1,
-		// openerTabId: tab.id,
+	rweb.optionsTabs(function(tabs) {
+		if ( tabs.length ) {
+			rweb.browser.tabs.update(tabs[0].id, {active: true});
+			rweb.browser.windows.update(tabs[0].windowId, {focused: true});
+			return;
+		}
+
+		var uri = rweb.browser.runtime.getURL('options/options.html');
+		uri += '#' + host;
+		rweb.browser.tabs.create({
+			url: uri,
+			index: tab.index + 1,
+			// openerTabId: tab.id,
+		});
 	});
 });
 

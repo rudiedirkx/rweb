@@ -89,7 +89,30 @@ rweb.ui = {
 		return x.join('.');
 	},
 
+	preInit: function() {
+		rweb.browser.tabs.getCurrent(function(current) {
+			rweb.optionsTabs(function(tabs) {
+				var original = tabs.find(function(tab) {
+					return tab.id < current.id;
+				});
+				if ( original ) {
+					rweb.browser.tabs.update(original.id, {active: true});
+					rweb.browser.windows.update(original.windowId, {focused: true});
+					rweb.browser.tabs.remove(current.id);
+					return;
+				}
+
+				rweb.ui.init();
+			});
+		});
+	},
+
 	init: function() {
+		// Upload when closing options page
+		window.on('beforeunload', function(e) {
+			rweb.browser.runtime.sendMessage({optionsClosed: true});
+		});
+
 		// Elements
 		$sites = $('#sites');
 		$table = $sites.getFirst();
@@ -898,11 +921,6 @@ document.body.onload = function() {
 		}
 	});
 
-	// Upload when closing options page
-	window.on('beforeunload', function(e) {
-		rweb.browser.runtime.sendMessage({optionsClosed: true});
-	});
-
 	// Init
-	rweb.ui.init();
+	rweb.ui.preInit();
 };
