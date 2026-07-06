@@ -28,15 +28,13 @@
 		</thead>
 		<tbody class="new-site">
 			<tr>
-				<td class="enabled checkboxify" title="Enabled?
-
-Will still take up space when disabled.">
+				<td class="enabled checkboxify" title="Enabled?">
 					<input type="checkbox" name="enabled" class="enabled el-enabled" checked />
 				</td>
 				<td class="content">
 					<input name="id" type="hidden" />
 					<div class="relative">
-						<input name="host" class="host el-host" placeholder="Hosts / domains. Without WWW! Use comma to separate more. Use 'all' for all websites. Use 'options' to target this page." />
+						<input name="host" class="host el-host" autocomplete="off" placeholder="Hosts / domains. Without WWW! Use comma to separate more. Use 'all' for all websites. Use 'options' to target this page." />
 						<span hidden class="el-metadata">(CSS: <span class="el-meta-css">0 kb</span>, JS: <span class="el-meta-js">0 kb</span>, matched: <span class="el-meta-matched">0</span>x)</span>
 					</div>
 				</td>
