@@ -494,7 +494,7 @@ rweb.ui = {
 			var btn = this;
 			btn.addClass('loading');
 			rweb.sync.upload(function(summary) {
-				var changes = !summary.dirty ? 0 : null;
+				var changes = summary.changes || 0;
 				rweb.log('upload', false, changes, function() {
 					// Log saved
 				});
@@ -508,9 +508,9 @@ rweb.ui = {
 			});
 		});
 
-		rweb.browser.storage.local.get(['dirty', 'lastUpload', 'lastDownload'], function(items) {
+		rweb.browser.storage.local.get(['dirty', 'dirtyIds', 'lastUpload', 'lastDownload'], function(items) {
 			var uploadTitle = [];
-			if ( items.dirty ) {
+			if ( rweb.isDirty(items) ) {
 				$('#btn-upload').addClass('dirty');
 				uploadTitle.push("'DIRTY' LOCAL STATE: you have local saved changes not uploaded to Drive");
 			}

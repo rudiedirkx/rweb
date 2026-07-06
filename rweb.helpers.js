@@ -127,11 +127,52 @@ rweb = {
 		if (callback) callback();
 	},
 
+	isDirty: function(storageItems) {
+		return Object.keys(storageItems.dirtyIds || {}).length > 0 || Boolean(storageItems.dirty);
+	},
+
+	diffDirtyIds: function(oldSites, newSites, dirtyIds) {
+		dirtyIds = Object.assign({}, dirtyIds);
+
+		var oldById = {};
+		oldSites.filter(rweb.siteFilter).forEach(function(site) {
+			oldById[site.id] = site;
+		});
+		var newById = {};
+		newSites.filter(rweb.siteFilter).forEach(function(site) {
+			newById[site.id] = site;
+		});
+
+		Object.keys(newById).forEach(function(id) {
+			if ( !oldById[id] ) {
+				dirtyIds[id] = 'new';
+			}
+			else if ( !dirtyIds[id] && !rweb.equal(rweb.unify(oldById[id]), rweb.unify(newById[id])) ) {
+				dirtyIds[id] = 'edited';
+			}
+		});
+
+		Object.keys(oldById).forEach(function(id) {
+			if ( !newById[id] ) {
+				if ( dirtyIds[id] === 'new' ) {
+					delete dirtyIds[id];
+				}
+				else {
+					dirtyIds[id] = 'deleted';
+				}
+			}
+		});
+
+		return dirtyIds;
+	},
+
 	storeSites: async function(sites) {
+		const prev = await rweb.browser.storage.local.get(['sites', 'dirtyIds']);
+		const dirtyIds = rweb.diffDirtyIds(prev.sites || [], sites, prev.dirtyIds || {});
 		return rweb.browser.storage.local.set({
 			sites: sites,
 			lastSave: Date.now(),
-			dirty: true,
+			dirtyIds: dirtyIds,
 		});
 	},
 
@@ -284,8 +325,8 @@ rweb = {
 	},
 
 	sites: function(host, callback, options) {
-		rweb.browser.storage.local.get(['sites', 'dirty', 'disabled', 'lastDownload', 'downloadingSince'], function(items) {
-			var dirty = Boolean(items.dirty);
+		rweb.browser.storage.local.get(['sites', 'dirty', 'dirtyIds', 'disabled', 'lastDownload', 'downloadingSince'], function(items) {
+			var dirty = rweb.isDirty(items);
 			var disabled = host && items.disabled && items.disabled[host] ? true : false;
 			var sites = (items.sites || []).map(function(site) {
 				site.weight = parseInt(site.weight || '0');

@@ -181,23 +181,6 @@ rweb.browser.action.onClicked.addListener(function(tab) {
 var downloadPromise = null;
 
 rweb.browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-	// Content script matched site
-	if ( msg && msg.site ) {
-		rweb.browser.action.getBadgeText({tabId: sender.tab.id}, function(text) {
-			var num = (parseFloat(text) || 0) + 1;
-			rweb.browser.action.setBadgeText({
-				text: String(num),
-				tabId: sender.tab.id
-			});
-		});
-
-		rweb.browser.action.setBadgeBackgroundColor({
-			color: '#000',
-			tabId: sender.tab.id
-		});
-		return sendResponse(true);
-	}
-
 	// Forced auto-download from content script
 	if ( msg && msg.forceAutoDownload ) {
 		if ( !downloadPromise ) {
@@ -238,7 +221,7 @@ rweb.browser.tabs.onRemoved.addListener(function(tabId, removeInfo) {
 				return;
 			}
 
-			var changes = !summary.dirty ? 0 : null;
+			var changes = summary.changes || 0;
 			rweb.log('upload', true, changes, function() {
 				// Log saved
 			});

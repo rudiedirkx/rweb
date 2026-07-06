@@ -156,7 +156,6 @@ console.debug('oauth2 url', url);
 		}).then(function(url) {
 			url = new URL(url.replace(/#/g, '?'));
 			var token = url.searchParams.get('access_token');
-console.log('auth access_token', token)
 			if ( token ) {
 				// return rweb.browser.storage.local.set({drive_access_token: token}, function() {
 					return callback(token);
@@ -165,7 +164,7 @@ console.log('auth access_token', token)
 
 			throw new Error("Can't find `access_token` in response URL");
 		}).catch(function() {
-console.log(`${interactive?'':'non-'}interactive auth failed`);
+console.debug(`${interactive?'':'non-'}interactive auth failed`);
 			callback(false);
 		});
 	},
@@ -178,7 +177,8 @@ console.log(`${interactive?'':'non-'}interactive auth failed`);
 				rweb.browser.storage.local.remove(['downloadingSince']);
 
 				if ( summary.imported ) {
-					rweb.browser.storage.local.set({lastDownload: Date.now(), dirty: false}, function() {
+					rweb.browser.storage.local.set({lastDownload: Date.now(), dirtyIds: {}}, function() {
+						rweb.browser.storage.local.remove('dirty');
 						console.log('Saved `lastDownload`.');
 						callback(summary);
 					});
@@ -230,6 +230,7 @@ console.log(`${interactive?'':'non-'}interactive auth failed`);
 	upload: function(callback, silent) {
 		var summary = {
 			dirty: false,
+			changes: 0,
 		};
 
 		var start = function() {
@@ -262,8 +263,9 @@ console.log(`${interactive?'':'non-'}interactive auth failed`);
 			});
 		};
 
-		rweb.browser.storage.local.get('dirty', function(items) {
-			summary.dirty = Boolean(items.dirty == null || items.dirty);
+		rweb.browser.storage.local.get(['dirty', 'dirtyIds'], function(items) {
+			summary.dirty = rweb.isDirty(items);
+			summary.changes = Object.keys(items.dirtyIds || {}).length;
 
 			// Manual upload, always. Auto upload, only if dirty
 			if ( !silent || summary.dirty ) {
@@ -405,7 +407,8 @@ console.debug('upload:output', sites);
 				body: JSON.stringify(sites),
 			}));
 
-			await rweb.browser.storage.local.set({dirty: false});
+			await rweb.browser.storage.local.set({dirtyIds: {}});
+			await rweb.browser.storage.local.remove('dirty');
 			callback(sites);
 		},
 		download: async function(token, file, callback) {
