@@ -1,5 +1,5 @@
 diff --git a/manifest.json b/manifest.json
-index 6ab4db6..ac67eb5 100644
+index 151cdd5..58d418c 100644
 --- a/manifest.json
 +++ b/manifest.json
 @@ -5,3 +5,4 @@
@@ -13,16 +13,19 @@ index 6ab4db6..ac67eb5 100644
 -		"service_worker": "rweb.background.js"
 +		"scripts": ["rweb.helpers.js", "rweb.sync.js", "rweb.background.js"]
  	},
-@@ -44,2 +45,7 @@
+@@ -44,2 +45,10 @@
  	},
 +	"browser_specific_settings": {
 +		"gecko": {
-+			"id": "rweb@hotblocks.nl"
++			"id": "rweb@hotblocks.nl",
++			"data_collection_permissions": {
++				"required": ["none"]
++			}
 +		}
 +	},
  
 diff --git a/rweb.background.js b/rweb.background.js
-index 8616a2f..f111bd1 100644
+index 0eaa796..513aa86 100644
 --- a/rweb.background.js
 +++ b/rweb.background.js
 @@ -1,2 +1,2 @@
