@@ -4,13 +4,15 @@ const labels = [
 	'Disable RWeb for DOMAIN',
 	'Re-enable RWeb for DOMAIN',
 ];
-chrome.runtime.onInstalled.addListener(function(info) {
+rweb.browser.runtime.onInstalled.addListener(function(info) {
 	rweb.syncUserScripts();
 
-	chrome.contextMenus.create({
-		"title": labels[0],
-		"id": 'rwebxable',
-		"contexts": ['action'],
+	rweb.browser.contextMenus.removeAll(function() {
+		rweb.browser.contextMenus.create({
+			"title": labels[0],
+			"id": 'rwebxable',
+			"contexts": ['action'],
+		});
 	});
 });
 
@@ -20,7 +22,7 @@ rweb.browser.storage.local.onChanged.addListener(function(changes) {
 	}
 });
 
-chrome.contextMenus.onClicked.addListener(async function(info, tab) {
+rweb.browser.contextMenus.onClicked.addListener(async function(info, tab) {
 	if (!tab.url) {
 		return console.warn('[RWeb] Could not read origin tab URL. Check optional permissions.');
 	}
