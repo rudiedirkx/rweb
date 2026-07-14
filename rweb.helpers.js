@@ -497,14 +497,6 @@ rweb = {
 			document.readyState == 'complete' ? cb() : window.addEventListener('load', cb, true);
 		};
 
-		const extension = function(callback, data) {
-			return new Promise(resolve => {
-				const RWEB_CHANNEL = new BroadcastChannel('rweb');
-				RWEB_CHANNEL.postMessage({sendCallback: String(callback), sendData: data});
-				RWEB_CHANNEL.onmessage = e => e.data.receiveData && resolve(e.data.receiveData);
-			});
-		};
-
 		js =
 			'(function() {\n\n' +
 			(hosts ? rweb.prepJsHostEscape(hosts, reverseEscape) : '') +
@@ -513,7 +505,6 @@ rweb = {
 			"const wrap = " + String(wrap) + ";\n" +
 			"const ready = " + String(ready) + ";\n" +
 			"const load = " + String(load) + ";\n" +
-			"const extension = " + String(extension) + ";\n" +
 			"const injectCSS = " + String(rweb.css) + ";\n" +
 			"\n\n" +
 			js + "\n" +
