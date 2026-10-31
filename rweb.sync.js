@@ -142,6 +142,15 @@ rweb.identity && (rweb.sync = {
 		}
 
 		// WebExtensions (Firefox)
+		const cached = await rweb.browser.storage.local.get(['drive_access_token', 'drive_access_token_expires']);
+		if ( cached.drive_access_token && cached.drive_access_token_expires > Date.now() ) {
+			return callback(cached.drive_access_token);
+		}
+
+		if ( !interactive ) {
+			return callback(false);
+		}
+
 		var manifest = rweb.browser.runtime.getManifest();
 		var provider = 'https://accounts.google.com/o/oauth2/v2/auth';
 		var clientId = encodeURIComponent(manifest.oauth2.client_id);
@@ -156,10 +165,15 @@ console.debug('oauth2 url', url);
 		}).then(function(url) {
 			url = new URL(url.replace(/#/g, '?'));
 			var token = url.searchParams.get('access_token');
+			var expiresIn = parseInt(url.searchParams.get('expires_in'), 10) || 3600;
+			var expiresAt = Date.now() + (expiresIn - 60) * 1000;
 			if ( token ) {
-				// return rweb.browser.storage.local.set({drive_access_token: token}, function() {
-					return callback(token);
-				// });
+				return rweb.browser.storage.local.set({
+					drive_access_token: token,
+					drive_access_token_expires: expiresAt,
+				}, function() {
+					callback(token);
+				});
 			}
 
 			throw new Error("Can't find `access_token` in response URL");
